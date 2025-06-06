@@ -18,7 +18,7 @@
             "-Wno-missing-braces", # Require braces
             "-Wextra",
             "-pedantic",
-            "-fPIC",     # Generate position independent code
+            "-fPIC"     # Generate position independent code
         ],
         "dependencies": [
             "sh2"
@@ -42,8 +42,7 @@
             "-Wno-missing-braces", # Require braces
             "-Wextra",
             "-pedantic",
-            "-fPIC",     # Generate position independent code
-        ],
-    }],
-    "profiles": 
+            "-fPIC"     # Generate position independent code
+        ]
+    }]
 }

@@ -311,7 +311,7 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
 
 napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     napi_status status;
-    size_t argc = MAX_ARGUMENTS;
+    size_t argc = 2;
     napi_value argv[2] = {NULL};
     napi_value this;
 
