@@ -1,0 +1,35 @@
+{
+    "name": "bno08x",
+    "version": "0.0.1",
+    "description": "I2C driver for BNO08x IMU.",
+    "main": "dist/index.js",
+    "types": "dist/types.d.ts",
+    "scripts": {
+        "test": "jest --runInBand",
+        "debug-build": "node-gyp rebuild --debug && tsc",
+        "configure": "node-gyp configure",
+        "build": "node-gyp build && tsc",
+        "bear-build": "bear -- node-gyp build && tsc",
+        "rebuild": "node-gyp rebuild && tsc",
+        "bear-rebuild": "bear -- node-gyp rebuild && tsc",
+        "clean": "node-gyp clean"
+    },
+    "keywords": [
+        "BNO08x",
+        "OpenI2C"
+    ],
+    "author": "",
+    "license": "MIT",
+    "gypfile": true,
+    "devDependencies": {
+        "@types/jest": "^29.5.14",
+        "@types/node": "^22.15.17",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.3.2",
+        "typescript": "^5.8.3"
+    },
+    "dependencies": {
+        "bindings": "^1.5.0",
+        "ts-node": "^10.9.2"
+    }
+}

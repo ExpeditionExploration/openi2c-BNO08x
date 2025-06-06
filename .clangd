@@ -1,0 +1,4 @@
+CompileFlags:
+  Add: 
+    - -I./src/ina219/src
+    - -I./src/c-include

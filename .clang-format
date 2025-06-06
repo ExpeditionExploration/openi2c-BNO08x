@@ -1,0 +1,14 @@
+BasedOnStyle: Google
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AlignAfterOpenBracket: Align
+PointerAlignment: Left
+BreakBeforeBraces: Attach
+ColumnLimit: 80
+SpacesBeforeTrailingComments: 1
+SpaceBeforeParens: ControlStatements
+Language: Cpp

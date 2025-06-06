@@ -1,0 +1,6 @@
+# ignore all files
+**/*
+# but allow C source or header
+!src/c-src/**/*.c
+!src/c-include/**/*.h
+!src/ina219/src/*
