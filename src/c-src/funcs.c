@@ -213,7 +213,7 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
     napi_status status;
 
     // Translate sensor event to napi_value
-    napi_value sensor_event = mkSensorEvent(env, event);
+    napi_value sensor_event = c_to_SensorEvent(env, event);
     if (sensor_event == NULL) { return; }
 
     // Cast the cookie and prepare the arguments
@@ -288,7 +288,7 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
         "env: %p, async_event_callback_broker(void *cookie, "
         "sh2_AsyncEvent_t*)\n",
         (void *)cookie_with_type->env);
-    napi_value async_event = mkAsyncEvent(cookie_with_type->env, event);
+    napi_value async_event = c_to_AsyncEvent(cookie_with_type->env, event);
     if (async_event == NULL) { return; }
 
     // Cast the cookie and prepare the arguments

@@ -11,7 +11,7 @@
 void free_event(napi_env env, void* finalize_data, void* finalize_hint) {
     if (finalize_data != NULL) { free(finalize_data); }
 }
-napi_value mkSensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
+napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     napi_status status;
     napi_value obj; // JS object
     status = napi_create_object(env, &obj);
@@ -55,7 +55,7 @@ napi_value mkSensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     return obj;
 }
 
-napi_value mkProductId(napi_env env, sh2_ProductId_t* id) {
+napi_value c_to_ProductId(napi_env env, sh2_ProductId_t* id) {
     napi_status status;
     napi_value obj; // JS object
     status = napi_create_object(env, &obj);
@@ -86,7 +86,7 @@ napi_value mkProductId(napi_env env, sh2_ProductId_t* id) {
     return obj;
 }
 
-napi_value mkSensorIdEnum(napi_env env) {
+napi_value c_to_SensorIdEnum(napi_env env) {
     napi_status status;
     napi_value obj;
     status = napi_create_object(env, &obj);
@@ -267,7 +267,7 @@ napi_value mkSensorIdEnum(napi_env env) {
     return obj;
 }
 
-napi_value mkSensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {
+napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {
     napi_status status;
     napi_value obj;
     status = napi_create_object(env, &obj);
@@ -329,7 +329,7 @@ void free_meta(napi_env env, void* finalize_data, void* finalize_hint) {
         free(finalize_data);
     }
 }
-napi_value mkSensorMetadata(napi_env env, sh2_SensorMetadata_t* meta) {
+napi_value c_to_SensorMetadata(napi_env env, sh2_SensorMetadata_t* meta) {
     napi_status status;
     napi_value obj;
     status = napi_create_object(env, &obj);
@@ -420,7 +420,7 @@ napi_value mkSensorMetadata(napi_env env, sh2_SensorMetadata_t* meta) {
     return obj;
 }
 
-napi_value mkErrorRecord(napi_env env, sh2_ErrorRecord_t* err) {
+napi_value c_to_ErrorRecord(napi_env env, sh2_ErrorRecord_t* err) {
     napi_status status;
     napi_value obj;
     status = napi_create_object(env, &obj);
@@ -455,7 +455,7 @@ napi_value mkErrorRecord(napi_env env, sh2_ErrorRecord_t* err) {
     return obj;
 }
 
-napi_value mkCounts(napi_env env, sh2_Counts_t* counts) {
+napi_value c_to_Counts(napi_env env, sh2_Counts_t* counts) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -483,7 +483,7 @@ napi_value mkCounts(napi_env env, sh2_Counts_t* counts) {
     return obj;
 }
 
-napi_value mkTareBasis(napi_env env) {
+napi_value c_to_TareBasis(napi_env env) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -517,7 +517,7 @@ napi_value mkTareBasis(napi_env env) {
     return obj;
 }
 
-napi_value mkTareAxis(napi_env env) {
+napi_value c_to_TareAxis(napi_env env) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -572,7 +572,7 @@ napi_value mkTareAxis(napi_env env) {
     return obj;
 }
 
-napi_value mkQuaternion(napi_env env, sh2_Quaternion_t* qt) {
+napi_value c_to_Quaternion(napi_env env, sh2_Quaternion_t* qt) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -597,7 +597,7 @@ napi_value mkQuaternion(napi_env env, sh2_Quaternion_t* qt) {
     return obj;
 }
 
-napi_value mkMotionIntent(napi_env env) {
+napi_value c_to_MotionIntent(napi_env env) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -642,7 +642,7 @@ napi_value mkMotionIntent(napi_env env) {
     return obj;
 }
 
-napi_value mkMotionRequest(napi_env env) {
+napi_value c_to_MotionRequest(napi_env env) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -678,7 +678,7 @@ napi_value mkMotionRequest(napi_env env) {
     return obj;
 }
 
-napi_value mkAsyncEventId(napi_env env) {
+napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -701,7 +701,7 @@ napi_value mkAsyncEventId(napi_env env) {
     return obj;
 }
 
-napi_value mkSensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
+napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -710,7 +710,7 @@ napi_value mkSensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
     napi_value config;
 
     status |= napi_create_uint32(env, cfg->sensorId, &sensorId);
-    config = mkSensorConfig(env, &cfg->sensorConfig);
+    config = c_to_SensorConfig(env, &cfg->sensorConfig);
     if (config == NULL) { return NULL; }
     status |= napi_set_named_property(env, obj, "sensorId", sensorId);
     status |= napi_set_named_property(env, obj, "config", config);
@@ -722,7 +722,7 @@ napi_value mkSensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
     return obj;
 }
 
-napi_value mkAsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
+napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     napi_value obj;
     napi_status status;
     printf("env: %p, mkAsyncEvent(napi_env, sh2_AsyncEvent_t)\n", (void*)env);
@@ -736,7 +736,7 @@ napi_value mkAsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     if (evt->eventId == SH2_GET_FEATURE_RESP) { // Populate the sensorConfigResp
         // field with the SHTP_EVENT value.
         sh2SensorConfigResp =
-            mkSensorConfigResp(env, &evt->sh2SensorConfigResp);
+            c_to_SensorConfigResp(env, &evt->sh2SensorConfigResp);
         status |= napi_get_null(env, &shtpEvent);
     } else if (evt->eventId == SH2_SHTP_EVENT) {
         status |= napi_get_null(env, &sh2SensorConfigResp);
@@ -760,7 +760,7 @@ napi_value mkAsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     return obj;
 }
 
-napi_value mkShtpEvent(napi_env env) {
+napi_value c_to_ShtpEvent(napi_env env) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);

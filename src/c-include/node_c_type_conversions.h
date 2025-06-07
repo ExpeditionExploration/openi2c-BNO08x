@@ -7,26 +7,26 @@
 #include "sh2/sh2.h"
 
 // C->NAPI
-napi_value mkNapiSensorEvent(napi_env env, sh2_SensorEvent_t *ev);
-napi_value mkProductId(napi_env env, sh2_ProductId_t *id);
-napi_value mkSensorIdEnum(napi_env env);
-napi_value mkSensorConfig(napi_env env, sh2_SensorConfig_t *cfg);
-napi_value mkSensorMetadata(napi_env env, sh2_SensorMetadata_t *meta);
-napi_value mkSensorEvent(napi_env env, sh2_SensorEvent_t *ev);
-napi_value mkErrorRecord(napi_env env, sh2_ErrorRecord_t *err);
-napi_value mkCounts(napi_env env, sh2_Counts_t *counts);
-napi_value mkTareBasis(napi_env env);
-napi_value mkTareAxis(napi_env env);
-napi_value mkQuaternion(napi_env env, sh2_Quaternion_t *qt);
-napi_value mkMotionIntent(napi_env env);
-napi_value mkMotionRequest(napi_env env);
-napi_value mkAsyncEventId(napi_env env);
-napi_value mkAsyncEvent(napi_env env, sh2_AsyncEvent_t *ev);
-napi_value mkSensorConfigResp(napi_env env, sh2_SensorConfigResp_t *cfg);
-napi_value mkShtpEvent(napi_env env);
+napi_value c_to_NapiSensorEvent(napi_env env, sh2_SensorEvent_t *ev);
+napi_value c_to_ProductId(napi_env env, sh2_ProductId_t *id);
+napi_value c_to_SensorIdEnum(napi_env env);
+napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t *cfg);
+napi_value c_to_SensorMetadata(napi_env env, sh2_SensorMetadata_t *meta);
+napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t *ev);
+napi_value c_to_ErrorRecord(napi_env env, sh2_ErrorRecord_t *err);
+napi_value c_to_Counts(napi_env env, sh2_Counts_t *counts);
+napi_value c_to_TareBasis(napi_env env);
+napi_value c_to_TareAxis(napi_env env);
+napi_value c_to_Quaternion(napi_env env, sh2_Quaternion_t *qt);
+napi_value c_to_MotionIntent(napi_env env);
+napi_value c_to_MotionRequest(napi_env env);
+napi_value c_to_AsyncEventId(napi_env env);
+napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t *ev);
+napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t *cfg);
+napi_value c_to_ShtpEvent(napi_env env);
 
 // NAPI->C
-uint8_t parseSensorConfig(napi_env env, napi_value value,
-                          sh2_SensorConfig_t *result);
+uint8_t from_SensorConfig_to_c(napi_env env, napi_value value,
+                               sh2_SensorConfig_t *result);
 
 #endif
