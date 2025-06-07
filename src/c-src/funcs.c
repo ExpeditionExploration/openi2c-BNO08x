@@ -263,18 +263,28 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
                          "sensor callback");
         return NULL;
     }
+
+    // Delete ref to allow GC to take it, and make note of the new ref
+    if (_sensor_callback != NULL) {
+        napi_delete_reference(env, _sensor_callback->jsFn_ref);
+        napi_delete_reference(env, _sensor_callback->cookie_ref);
+        free(_sensor_callback);
+        _sensor_callback = NULL;
+    }
+
     cookie->env = env;
     cookie->jsFn = argv[0];
     cookie->cookie = argv[1];
     napi_create_reference(env, cookie->jsFn, 1, &cookie->jsFn_ref);
     napi_create_reference(env, cookie->cookie, 1, &cookie->cookie_ref);
-
-    // Delete ref to allow GC to take it, and make note of the new ref
-    napi_delete_reference(env, _sensor_callback->jsFn_ref);
     _sensor_callback = cookie;
 
-    sh2_SensorCallback_t *callback = sensor_callback;
-    sh2_setSensorCallback(callback, _sensor_callback);
+    int8_t ret_code;
+    if ((ret_code = sh2_setSensorCallback(sensor_callback, _sensor_callback)) <
+        0) {
+        printf("Setting a new callback failed with code: %hhd\n", ret_code);
+    }
+
     return NULL;
 }
 
@@ -337,6 +347,8 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     if (_sensor_callback != NULL) {
         napi_delete_reference(env, _sensor_callback->jsFn_ref);
         napi_delete_reference(env, _sensor_callback->cookie_ref);
+        free(_sensor_callback);
+        _sensor_callback = NULL;
     }
     cb_cookie_t *cookie = malloc(sizeof(cb_cookie_t));
     _sensor_callback = cookie;
