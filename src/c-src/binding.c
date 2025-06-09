@@ -19,11 +19,12 @@ static uint8_t register_fn(napi_env env, napi_value exports, const char* name,
 }
 
 napi_value init(napi_env env, napi_value exports) {
-
     register_fn(env, exports, "setI2CConfig", cb_setI2CSettings, NULL);
     register_fn(env, exports, "getI2CConfig", cb_getI2CSettings, NULL);
     register_fn(env, exports, "service", cb_service, NULL);
     register_fn(env, exports, "setSensorCallback", cb_setSensorCallback, NULL);
+    register_fn(env, exports, "getSensorConfig", cb_get_sensor_config, NULL);
+    register_fn(env, exports, "setSensorConfig", cb_set_sensor_config, NULL);
     register_fn(env, exports, "open", cb_sh2_open, NULL);
     register_fn(env, exports, "close", cb_sh2_close, NULL);
     return exports;

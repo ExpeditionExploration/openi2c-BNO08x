@@ -1,4 +1,5 @@
 
+#include <limits.h>
 #include <node/node_api.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -803,4 +804,183 @@ napi_value c_to_ShtpEvent(napi_env env) {
         return NULL;
     }
     return obj;
+}
+
+int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
+                              sh2_SensorConfig_t* result,
+                              bool supplement_with_defaults) {
+    napi_status status;
+    napi_value changeSensitivityEnabled;
+    napi_value changeSensitivityRelative;
+    napi_value wakeupEnabled;
+    napi_value alwaysOnEnabled;
+    napi_value sniffEnabled;
+    napi_value changeSensitivity;
+    napi_value reportInterval_us;
+    napi_value batchInterval_us;
+    napi_value sensorSpecific;
+
+    memset(result, 0, sizeof(sh2_SensorConfig_t));
+    bool has_prop;
+
+    // Get the properties from the JS object
+
+    // changeSensitivityEnabled
+    status = napi_has_named_property(env, value, "changeSensitivityEnabled",
+                                     &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status = napi_get_named_property(env, value, "changeSensitivityEnabled",
+                                         &changeSensitivityEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        status = napi_get_value_bool(env, changeSensitivityEnabled,
+                                     &result->changeSensitivityEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // changeSensitivityRelative
+    status = napi_has_named_property(env, value, "changeSensitivityRelative",
+                                     &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status =
+            napi_get_named_property(env, value, "changeSensitivityRelative",
+                                    &changeSensitivityRelative);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        status = napi_get_value_bool(env, changeSensitivityRelative,
+                                     &result->changeSensitivityRelative);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // wakeupEnabled
+    status = napi_has_named_property(env, value, "wakeupEnabled", &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status = napi_get_named_property(env, value, "wakeupEnabled",
+                                         &wakeupEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        status =
+            napi_get_value_bool(env, wakeupEnabled, &result->wakeupEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // alwaysOnEnabled
+    status = napi_has_named_property(env, value, "alwaysOnEnabled", &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status = napi_get_named_property(env, value, "alwaysOnEnabled",
+                                         &alwaysOnEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        status =
+            napi_get_value_bool(env, alwaysOnEnabled, &result->alwaysOnEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // sniffEnabled
+    status = napi_has_named_property(env, value, "sniffEnabled", &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status =
+            napi_get_named_property(env, value, "sniffEnabled", &sniffEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        status = napi_get_value_bool(env, sniffEnabled, &result->sniffEnabled);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // changeSensitivity
+    status =
+        napi_has_named_property(env, value, "changeSensitivity", &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status = napi_get_named_property(env, value, "changeSensitivity",
+                                         &changeSensitivity);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        uint32_t tmp;
+        status = napi_get_value_uint32(env, changeSensitivity, &tmp);
+        if (status != napi_ok) {
+            napi_throw_error(env, ERROR_TRANSLATING_NODE_TO_STRUCT,
+                             "changeSensitivity is not a uint32.");
+            return EXIT_FAILURE;
+        }
+        if (tmp > UINT16_MAX) { // Out of range
+            return EXIT_FAILURE;
+        }
+        result->changeSensitivity = (uint16_t)tmp;
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // reportInterval_us
+    status =
+        napi_has_named_property(env, value, "reportInterval_us", &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status = napi_get_named_property(env, value, "reportInterval_us",
+                                         &reportInterval_us);
+        if (status != napi_ok) { // Invalid property
+            return EXIT_FAILURE;
+        }
+        uint32_t tmp;
+        status = napi_get_value_uint32(env, reportInterval_us, &tmp);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        result->reportInterval_us = tmp;
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // batchInterval_us
+    status = napi_has_named_property(env, value, "batchInterval_us", &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status = napi_get_named_property(env, value, "batchInterval_us",
+                                         &batchInterval_us);
+        if (status != napi_ok) { // Invalid property
+            return EXIT_FAILURE;
+        }
+        uint32_t tmp;
+        status = napi_get_value_uint32(env, batchInterval_us, &tmp);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        result->batchInterval_us = tmp;
+    } else if (!supplement_with_defaults) {
+        return EXIT_FAILURE;
+    } // else { The struct was memset() to zero, and sensor defaults apply for
+      // this reason. }
+
+    // sensorSpecific
+    status = napi_has_named_property(env, value, "sensorSpecific", &has_prop);
+    if (has_prop) {
+        // No need to supplement anything, since the property is found.
+        status = napi_get_named_property(env, value, "sensorSpecific",
+                                         &sensorSpecific);
+        if (status != napi_ok) { // Invalid property
+            return EXIT_FAILURE;
+        }
+        size_t sensorSpecificLen;
+        void* sensorSpecificPtr;
+        status = napi_get_buffer_info(env, sensorSpecific, &sensorSpecificPtr,
+                                      &sensorSpecificLen);
+        if (status != napi_ok) { return EXIT_FAILURE; }
+        if (sensorSpecificLen > 4) { // 4 is the max length of sensorSpecific
+            return EXIT_FAILURE;
+        }
+        memcpy(&result->sensorSpecific, sensorSpecificPtr, sensorSpecificLen);
+    }
+    return EXIT_SUCCESS;
 }

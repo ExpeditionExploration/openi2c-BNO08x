@@ -26,7 +26,7 @@ napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t *cfg);
 napi_value c_to_ShtpEvent(napi_env env);
 
 // NAPI->C
-uint8_t from_SensorConfig_to_c(napi_env env, napi_value value,
+int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
                                sh2_SensorConfig_t *result);
 
 #endif

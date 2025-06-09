@@ -68,37 +68,37 @@ export enum SensorId {
 }
 
 export type SensorConfig = {
-        /** Change sensitivity enabled */
-        changeSensitivityEnabled: boolean,
+    /** Change sensitivity enabled */
+    changeSensitivityEnabled: boolean,
 
-        /** Change sensitivity - true if relative; false if absolute */
-        changeSensitivityRelative?: boolean,
-    
-        /** Wake-up enabled */
-        wakeupEnabled: boolean,
-    
-        /** Always on enabled */
-        alwaysOnEnabled: boolean,
-    
-        /** Any output from this sensor should be sent to host, but
-         * reportInterval_us and sensorSpecific do not influence sensor
-         * operation. Not supported by all sensors. */
-        sniffEnabled: boolean,
-    
-        /** 16-bit signed fixed point integer representing the value a
-         * sensor output must exceed in order to trigger another input
-         * report. A setting of 0 causes all reports to be sent.
-         */
-        changeSensitivity?: number,
-    
-        /** Interval in microseconds between asynchronous input reports. */
-        reportInterval_us: number,
-    
-        /** Reserved field, not used. */
-        batchInterval_us?: number,
-    
-        /** Meaning is sensor specific */
-        sensorSpecific: number,
+    /** Change sensitivity - true if relative; false if absolute */
+    changeSensitivityRelative?: boolean,
+
+    /** Wake-up enabled */
+    wakeupEnabled?: boolean,
+
+    /** Always on enabled */
+    alwaysOnEnabled: boolean,
+
+    /** Any output from this sensor should be sent to host, but
+     * reportInterval_us and sensorSpecific do not influence sensor
+     * operation. Not supported by all sensors. */
+    sniffEnabled?: boolean,
+
+    /** 16-bit signed fixed point integer representing the value a
+     * sensor output must exceed in order to trigger another input
+     * report. A setting of 0 causes all reports to be sent.
+     */
+    changeSensitivity?: number,
+
+    /** Interval in microseconds between asynchronous input reports. */
+    reportInterval_us: number,
+
+    /** Reserved field, not used. */
+    batchInterval_us?: number,
+
+    /** Meaning is sensor specific */
+    sensorSpecific?: Buffer,
 }
 
 export type SensorMetadata = {

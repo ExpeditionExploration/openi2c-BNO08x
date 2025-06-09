@@ -245,7 +245,7 @@ static cb_cookie_t *_sensor_callback;
 napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     // napi_status status;
 
-    napi_value argv[MAX_ARGUMENTS] = {NULL};
+    napi_value argv[MAX_ARGUMENTS] = {0};
     size_t argc = MAX_ARGUMENTS;
 
     bool success = parse_args(env, info, &argc, argv, NULL, NULL, 2, 2);
@@ -322,7 +322,7 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
 napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     napi_status status;
     size_t argc = 2;
-    napi_value argv[2] = {NULL};
+    napi_value argv[2] = {0};
     napi_value this;
 
     status = napi_get_global(env, &this);
@@ -381,5 +381,84 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
 
 napi_value cb_sh2_close(napi_env env, napi_callback_info _) {
     sh2_close();
+    return NULL;
+}
+
+napi_value cb_get_sensor_config(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1] = {0};
+
+    bool okkay = parse_args(env, info, &argc, argv, NULL, NULL, 1, 1);
+    if (okkay == false) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Couldn't parse arguments in cb_sh2_open");
+        return NULL;
+    }
+
+    // Get sensor id
+    uint32_t sensor_id;
+    napi_get_value_uint32(env, argv[0], &sensor_id);
+
+    // Get sensor config
+    sh2_SensorConfig_t config;
+    int code;
+    if ((code = sh2_getSensorConfig(sensor_id, &config)) < 0) {
+        printf("Failed to get sensor config for %u with code: %d\n", sensor_id,
+               code);
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Failed to get sensor config");
+        return NULL;
+    }
+
+    // Convert sensor config to napi_value
+    napi_value result = c_to_SensorConfig(env, &config);
+    if (result == NULL) {
+        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+                         "Failed to convert sensor config to napi_value");
+        return NULL;
+    }
+
+    // Return the sensor config
+    return result;
+}
+
+napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value argv[2] = {0};
+
+    bool okkay = parse_args(env, info, &argc, argv, NULL, NULL, 2, 2);
+    if (okkay == false) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Couldn't parse arguments in cb_set_sensor_config");
+        return NULL;
+    }
+
+    // Convert sensor config to C struct
+    // The first argument is the sensor id, the second is the sensor config
+    sh2_SensorConfig_t config;
+    if (from_SensorConfig_to_c(env, argv[1], &config) == 0) {
+        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+                         "Failed to convert sensor config from napi_value");
+        return NULL;
+    }
+
+    // Read the sensor id from the first argument
+    uint32_t sensor_id;
+    napi_status status = napi_get_value_uint32(env, argv[0], &sensor_id);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Failed to get sensor id from napi_value");
+        return NULL;
+    }
+
+    // Set sensor config
+    int code;
+    if ((code = sh2_setSensorConfig(sensor_id, &config)) < 0) {
+        printf("Failed to set sensor config with code: %d\n", code);
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Failed to set sensor config");
+        return NULL;
+    }
+
     return NULL;
 }
