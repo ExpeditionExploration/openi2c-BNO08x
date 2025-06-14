@@ -129,6 +129,10 @@ bool parse_args(napi_env env, napi_callback_info info, size_t *argc,
     return true;
 }
 
+static napi_env the_env;
+static void set_napi_env(napi_env env) { the_env = env; }
+static napi_env get_napi_env(void) { return the_env; }
+
 // This function creates struct with settings to communicated with a SB2 device.
 //
 // args:
@@ -188,7 +192,7 @@ napi_value cb_getI2CSettings(napi_env env, napi_callback_info _) {
 }
 
 napi_value cb_service(napi_env env, napi_callback_info info) {
-    // i2c_settings_t settings = get_i2c_settings();
+    set_napi_env(env);
     sh2_service();
     return NULL;
 }
@@ -209,7 +213,7 @@ typedef struct {
 // It then calls the JS callback that is passed in the cookie structure
 // `cb_cookie_t`.
 static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
-    napi_env env = (napi_env)cookie;
+    napi_env env = ((cb_cookie_t *)(cookie))->env;
     napi_status status;
 
     // Translate sensor event to napi_value
@@ -222,9 +226,11 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
     napi_value argv[2] = {c->cookie, sensor_event};
 
     // Call the callback function with the sensor data
-    napi_value this;
-    status = napi_get_global(c->env, &this);
-    status |= napi_call_function(c->env, this, c->jsFn, 2, argv, NULL);
+    napi_value global;
+    napi_value return_value;
+    status = napi_get_global(c->env, &global);
+    status |=
+        napi_call_function(c->env, global, c->jsFn, 2, argv, &return_value);
     if (status != napi_ok) {
         napi_throw_error(
             c->env, ERROR_CREATING_NAPI_VALUE,
@@ -234,6 +240,7 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
 }
 
 static cb_cookie_t *_sensor_callback;
+static cb_cookie_t *_async_event_callback;
 // This function prepares the `cb_cookie_t` struct and calls the
 // sh2_setSensorCallback function.
 // It sets the callback function to be called when a sensor event occurs by
@@ -288,38 +295,56 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
+static const char *napi_valuetype_to_str(napi_valuetype val) {
+    switch (val) {
+        case napi_undefined: return "napi_undefined"; break;
+        case napi_null: return "napi_null"; break;
+        case napi_boolean: return "napi_boolean"; break;
+        case napi_number: return "napi_number"; break;
+        case napi_string: return "napi_string"; break;
+        case napi_symbol: return "napi_symbol"; break;
+        case napi_function: return "napi_function"; break;
+        case napi_object: return "napi_object"; break;
+        case napi_bigint: return "napi_bigint"; break;
+        case napi_external: return "napi_external"; break;
+        default: return "invalid";
+    }
+}
+
 static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
+    napi_env env = get_napi_env();
     cb_cookie_t *cookie_with_type = cookie;
     napi_status status;
     napi_value return_value;
 
     // Translate sensor event to napi_value
-    printf(
-        "env: %p, async_event_callback_broker(void *cookie, "
-        "sh2_AsyncEvent_t*)\n",
-        (void *)cookie_with_type->env);
-    napi_value async_event = c_to_AsyncEvent(cookie_with_type->env, event);
+    napi_value async_event = c_to_AsyncEvent(env, event);
     if (async_event == NULL) { return; }
 
     // Cast the cookie and prepare the arguments
     // to call the JS function
     napi_value argv[2] = {cookie_with_type->cookie, async_event};
 
+    // Check for js fn type
+    napi_valuetype t;
+    status = napi_typeof(env, cookie_with_type->jsFn, &t);
+    fprintf(stderr, "typeof(t) == '%s'\n", napi_valuetype_to_str(t));
+
     // Call the callback function with the sensor data
-    napi_value this;
-    status = napi_get_global(cookie_with_type->env, &this);
-    status |=
-        napi_call_function(cookie_with_type->env, this, cookie_with_type->jsFn,
-                           2, argv, &return_value);
+    napi_value global;
+    status = napi_get_global(env, &global);
+    status |= napi_call_function(env, global, cookie_with_type->jsFn, 2, argv,
+                                 &return_value);
     if (status != napi_ok) {
         napi_throw_error(
-            cookie_with_type->env, ERROR_CREATING_NAPI_VALUE,
+            env, ERROR_CREATING_NAPI_VALUE,
             "Sensor event happened but couldn't construct a napi value for it");
         return;
     }
 }
 
 napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
+    set_napi_env(env);
     napi_status status;
     size_t argc = 2;
     napi_value argv[2] = {0};
@@ -344,24 +369,24 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
 
     // Get the bus number and address from the I2C settings
     // i2c_settings_t     settings = get_i2c_settings();
-    if (_sensor_callback != NULL) {
-        napi_delete_reference(env, _sensor_callback->jsFn_ref);
-        napi_delete_reference(env, _sensor_callback->cookie_ref);
-        free(_sensor_callback);
-        _sensor_callback = NULL;
+    if (_async_event_callback != NULL) {
+        napi_delete_reference(env, _async_event_callback->jsFn_ref);
+        napi_delete_reference(env, _async_event_callback->cookie_ref);
+        free(_async_event_callback);
+        _async_event_callback = NULL;
     }
     cb_cookie_t *cookie = malloc(sizeof(cb_cookie_t));
-    _sensor_callback = cookie;
-    _sensor_callback->env = env;
-    _sensor_callback->jsFn = jsFn;
-    _sensor_callback->cookie = jsCookie;
+    _async_event_callback = cookie;
+    _async_event_callback->env = env;
+    _async_event_callback->jsFn = jsFn;
+    _async_event_callback->cookie = jsCookie;
 
     // Prevents jsFn and cookie from being garbage collected in case
     // there are no references left in the node side of things.
-    napi_create_reference(env, _sensor_callback->jsFn, 1,
-                          &_sensor_callback->jsFn_ref);
-    napi_create_reference(env, _sensor_callback->cookie, 1,
-                          &_sensor_callback->cookie_ref);
+    napi_create_reference(env, _async_event_callback->jsFn, 1,
+                          &_async_event_callback->jsFn_ref);
+    napi_create_reference(env, _async_event_callback->cookie, 1,
+                          &_async_event_callback->cookie_ref);
 
     // Prepare the HAL struct
     static sh2_Hal_t hal;
@@ -370,7 +395,8 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     // Open connection
     printf("env: %p, cb_sh2_open(napi_env env, napi_callback_info info)\n",
            (void *)env);
-    int status_ = sh2_open(&hal, async_event_callback_broker, _sensor_callback);
+    int status_ =
+        sh2_open(&hal, async_event_callback_broker, _async_event_callback);
     if (status_ != 0) {
         napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
                          "Couldn't open the sh2 device");
@@ -460,5 +486,20 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
         return NULL;
     }
 
+    return NULL;
+}
+
+napi_value cb_devOn(napi_env env, napi_callback_info info) {
+    sh2_devOn();
+    return NULL;
+}
+
+napi_value cb_devReset(napi_env env, napi_callback_info info) {
+    sh2_devReset();
+    return NULL;
+}
+
+napi_value cb_devSleep(napi_env env, napi_callback_info info) {
+    sh2_devSleep();
     return NULL;
 }

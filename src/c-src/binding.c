@@ -26,6 +26,9 @@ napi_value init(napi_env env, napi_value exports) {
     register_fn(env, exports, "getSensorConfig", cb_get_sensor_config, NULL);
     register_fn(env, exports, "setSensorConfig", cb_set_sensor_config, NULL);
     register_fn(env, exports, "open", cb_sh2_open, NULL);
+    register_fn(env, exports, "devOn", cb_devOn, NULL);
+    register_fn(env, exports, "devReset", cb_devReset, NULL);
+    register_fn(env, exports, "devSleep", cb_devSleep, NULL);
     register_fn(env, exports, "close", cb_sh2_close, NULL);
     return exports;
 }

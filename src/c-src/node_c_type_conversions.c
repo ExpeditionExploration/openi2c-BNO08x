@@ -726,7 +726,6 @@ napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
 napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     napi_value obj;
     napi_status status;
-    printf("env: %p, mkAsyncEvent(napi_env, sh2_AsyncEvent_t)\n", (void*)env);
     status = napi_create_object(env, &obj);
 
     napi_value eventId;
