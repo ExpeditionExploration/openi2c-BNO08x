@@ -4,7 +4,7 @@ import { bindings, SensorConfig, SensorId } from '.'
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 
-async function main() {
+async function main(): Promise<void> {
     // Set bus number and device address
     bindings.setI2CConfig(1, 0x4b)
     bindings.open((cookie, ev) => { console.log(ev); }, 'lala')
@@ -17,11 +17,10 @@ async function main() {
     }
     bindings.devOn()
     bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg)
-    bindings.setSensorCallback((cookie, ev) => console.log(ev), null);
 
     for (let i = 0; i < 50; i++) {
         await sleep(200)
         bindings.service()
     }
 }
-main();
+main().then(() => console.log("done"));

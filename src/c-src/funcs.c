@@ -129,9 +129,53 @@ bool parse_args(napi_env env, napi_callback_info info, size_t *argc,
     return true;
 }
 
+// This struct is used to pass it as a cookie for a sh2_SensorCallback_t.
+// It's signature is void (void *, sh2_SensorEvent_t *)
+//
+// Also cb_sh2_open uses this for cookies.
+typedef struct {
+    napi_env env;
+    napi_value jsFn;
+    napi_value cookie;
+    napi_ref jsFn_ref;
+    napi_ref cookie_ref;
+} cb_cookie_t;
+
+static cb_cookie_t *_sensor_callback;
+static cb_cookie_t *_async_event_callback;
+
 static napi_env the_env;
 static void set_napi_env(napi_env env) { the_env = env; }
 static napi_env get_napi_env(void) { return the_env; }
+
+static const char *napi_valuetype_to_str(napi_valuetype val) {
+    switch (val) {
+        case napi_undefined: return "napi_undefined"; break;
+        case napi_null: return "napi_null"; break;
+        case napi_boolean: return "napi_boolean"; break;
+        case napi_number: return "napi_number"; break;
+        case napi_string: return "napi_string"; break;
+        case napi_symbol: return "napi_symbol"; break;
+        case napi_function: return "napi_function"; break;
+        case napi_object: return "napi_object"; break;
+        case napi_bigint: return "napi_bigint"; break;
+        case napi_external: return "napi_external"; break;
+        default: return "invalid";
+    }
+}
+
+static void typeof_cb_async_ev(napi_env env) {
+    static napi_valuetype t;
+    napi_typeof(env, _async_event_callback->jsFn, &t);
+    fprintf(stderr, "typeof(async_event->jsfn) == '%s'\n",
+            napi_valuetype_to_str(t));
+}
+// static void typeof_cb_sensor_ev(napi_env env) {
+//     static napi_valuetype t;
+//     napi_typeof(env, _sensor_callback->jsFn, &t);
+//     fprintf(stderr, "typeof(sensor_event->jsfn) == '%s'\n",
+//             napi_valuetype_to_str(t));
+// }
 
 // This function creates struct with settings to communicated with a SB2 device.
 //
@@ -192,22 +236,13 @@ napi_value cb_getI2CSettings(napi_env env, napi_callback_info _) {
 }
 
 napi_value cb_service(napi_env env, napi_callback_info info) {
+    typeof_cb_async_ev(env);
+    // typeof_cb_sensor_ev(env);
+
     set_napi_env(env);
     sh2_service();
     return NULL;
 }
-
-// This struct is used to pass it as a cookie for a sh2_SensorCallback_t.
-// It's signature is void (void *, sh2_SensorEvent_t *)
-//
-// Also cb_sh2_open uses this for cookies.
-typedef struct {
-    napi_env env;
-    napi_value jsFn;
-    napi_value cookie;
-    napi_ref jsFn_ref;
-    napi_ref cookie_ref;
-} cb_cookie_t;
 
 // This function is the common C callback the driver calls on a sensor event.
 // It then calls the JS callback that is passed in the cookie structure
@@ -239,8 +274,6 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
     }
 }
 
-static cb_cookie_t *_sensor_callback;
-static cb_cookie_t *_async_event_callback;
 // This function prepares the `cb_cookie_t` struct and calls the
 // sh2_setSensorCallback function.
 // It sets the callback function to be called when a sensor event occurs by
@@ -252,8 +285,8 @@ static cb_cookie_t *_async_event_callback;
 napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     // napi_status status;
 
-    napi_value argv[MAX_ARGUMENTS] = {0};
-    size_t argc = MAX_ARGUMENTS;
+    napi_value argv[2] = {0};
+    size_t argc = 2;
 
     bool success = parse_args(env, info, &argc, argv, NULL, NULL, 2, 2);
     if (!success) {
@@ -295,24 +328,9 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-static const char *napi_valuetype_to_str(napi_valuetype val) {
-    switch (val) {
-        case napi_undefined: return "napi_undefined"; break;
-        case napi_null: return "napi_null"; break;
-        case napi_boolean: return "napi_boolean"; break;
-        case napi_number: return "napi_number"; break;
-        case napi_string: return "napi_string"; break;
-        case napi_symbol: return "napi_symbol"; break;
-        case napi_function: return "napi_function"; break;
-        case napi_object: return "napi_object"; break;
-        case napi_bigint: return "napi_bigint"; break;
-        case napi_external: return "napi_external"; break;
-        default: return "invalid";
-    }
-}
-
 static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     napi_env env = get_napi_env();
+    typeof_cb_async_ev(env);
     cb_cookie_t *cookie_with_type = cookie;
     napi_status status;
     napi_value return_value;
@@ -321,26 +339,37 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     napi_value async_event = c_to_AsyncEvent(env, event);
     if (async_event == NULL) { return; }
 
+    napi_value cookie_cookie_arg;
+    napi_value cookie_jsFn_arg;
+    napi_get_reference_value(env, cookie_with_type->cookie_ref,
+                             &cookie_cookie_arg);
+    napi_get_reference_value(env, cookie_with_type->jsFn_ref, &cookie_jsFn_arg);
+
     // Cast the cookie and prepare the arguments
     // to call the JS function
-    napi_value argv[2] = {cookie_with_type->cookie, async_event};
+    napi_value argv[2] = {cookie_cookie_arg, async_event};
 
     // Check for js fn type
     napi_valuetype t;
     status = napi_typeof(env, cookie_with_type->jsFn, &t);
+    if (status != napi_ok) { fprintf(stderr, "napi_not_ok :D %d\n", status); }
     fprintf(stderr, "typeof(t) == '%s'\n", napi_valuetype_to_str(t));
 
     // Call the callback function with the sensor data
     napi_value global;
     status = napi_get_global(env, &global);
-    status |= napi_call_function(env, global, cookie_with_type->jsFn, 2, argv,
+
+    // The call below fails due to jsFn changing type
+    status |= napi_call_function(env, global, cookie_jsFn_arg, 2, argv,
                                  &return_value);
     if (status != napi_ok) {
         napi_throw_error(
             env, ERROR_CREATING_NAPI_VALUE,
             "Sensor event happened but couldn't construct a napi value for it");
-        return;
     }
+    // Check for js fn type
+    status = napi_typeof(env, cookie_with_type->jsFn, &t);
+    fprintf(stderr, "typeof(t) == '%s'\n", napi_valuetype_to_str(t));
 }
 
 napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
