@@ -3,12 +3,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <uv.h>
 
 #include "error.h"
 #include "node_c_type_conversions.h"
 #include "sh2/sh2.h"
 #include "sh2/sh2_hal.h"
 #include "sh2_hal_supplement.h"
+#include "uv/unix.h"
 
 // Max arguments a function can take
 #define MAX_ARGUMENTS 10
@@ -135,10 +138,9 @@ bool parse_args(napi_env env, napi_callback_info info, size_t *argc,
 // Also cb_sh2_open uses this for cookies.
 typedef struct {
     napi_env env;
-    napi_value jsFn;
-    napi_value cookie;
     napi_ref jsFn_ref;
     napi_ref cookie_ref;
+    uv_thread_t thread;
 } cb_cookie_t;
 
 static cb_cookie_t *_sensor_callback;
@@ -221,14 +223,18 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
     // Cast the cookie and prepare the arguments
     // to call the JS function
     cb_cookie_t *c = (cb_cookie_t *)cookie;
-    napi_value argv[2] = {c->cookie, sensor_event};
+    napi_value fetched_js_cookie;
+    napi_value fetched_js_fn;
+    napi_get_reference_value(env, c->cookie_ref, &fetched_js_cookie);
+    napi_get_reference_value(env, c->jsFn_ref, &fetched_js_fn);
+    napi_value argv[2] = {fetched_js_cookie, sensor_event};
 
     // Call the callback function with the sensor data
     napi_value global;
     napi_value return_value;
     status = napi_get_global(c->env, &global);
-    status |=
-        napi_call_function(c->env, global, c->jsFn, 2, argv, &return_value);
+    status |= napi_call_function(c->env, global, fetched_js_fn, 2, argv,
+                                 &return_value);
     if (status != napi_ok) {
         napi_throw_error(
             c->env, ERROR_CREATING_NAPI_VALUE,
@@ -276,10 +282,8 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     }
 
     cookie->env = env;
-    cookie->jsFn = argv[0];
-    cookie->cookie = argv[1];
-    napi_create_reference(env, cookie->jsFn, 1, &cookie->jsFn_ref);
-    napi_create_reference(env, cookie->cookie, 1, &cookie->cookie_ref);
+    napi_create_reference(env, argv[0], 1, &cookie->jsFn_ref);
+    napi_create_reference(env, argv[1], 1, &cookie->cookie_ref);
     _sensor_callback = cookie;
 
     int8_t ret_code;
@@ -296,6 +300,11 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     cb_cookie_t *cookie_with_type = cookie;
     napi_status status;
     napi_value return_value;
+    uv_thread_t this_thread = uv_thread_self();
+    if (!uv_thread_equal(&this_thread, &cookie_with_type->thread)) {
+        fprintf(stderr, "Not in NodeJS main thread. Aborting.\n");
+        exit(1);
+    }
 
     // Translate sensor event to napi_value
     napi_value async_event = c_to_AsyncEvent(env, event);
@@ -359,8 +368,15 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     }
 
     // Get napi values of the arguments
-    napi_value jsCookie = argv[1];
     napi_value jsFn = argv[0];
+    napi_value jsCookie = argv[1];
+
+    napi_valuetype jsFn_t, jsCookie_t;
+    status = napi_typeof(env, jsFn, &jsFn_t);
+    napi_status status2 = napi_typeof(env, jsCookie, &jsCookie_t);
+    fprintf(stderr,
+            "status jsFn: %d, status jsCookie: %d, typeof jsCookie: %d\n",
+            status, status2, jsCookie_t);
 
     // Get the bus number and address from the I2C settings
     // i2c_settings_t     settings = get_i2c_settings();
@@ -373,15 +389,20 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     cb_cookie_t *cookie = malloc(sizeof(cb_cookie_t));
     _async_event_callback = cookie;
     _async_event_callback->env = env;
-    _async_event_callback->jsFn = jsFn;
-    _async_event_callback->cookie = jsCookie;
+    _async_event_callback->thread = uv_thread_self();
 
     // Prevents jsFn and cookie from being garbage collected in case
     // there are no references left in the node side of things.
-    napi_create_reference(env, _async_event_callback->jsFn, 1,
-                          &_async_event_callback->jsFn_ref);
-    napi_create_reference(env, _async_event_callback->cookie, 1,
-                          &_async_event_callback->cookie_ref);
+    status = napi_create_reference(env, jsFn, 1,
+                                   &_async_event_callback->jsFn_ref);
+    if (status != napi_ok) {
+        napi_throw_error(env, NULL, "Couldn't create ref\n");
+    }
+    status = napi_create_reference(env, jsCookie, 1,
+                                   &_async_event_callback->cookie_ref);
+    if (status != napi_ok) {
+        napi_throw_error(env, NULL, "Couldn't create ref\n");
+    }
 
     // Prepare the HAL struct
     static sh2_Hal_t hal;

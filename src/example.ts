@@ -7,7 +7,8 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function main(): Promise<void> {
     // Set bus number and device address
     bindings.setI2CConfig(1, 0x4b)
-    bindings.open((cookie, ev) => { console.log(ev); }, 'lala')
+    bindings.open((cookie, ev) => { console.log(ev); }, { foo: 'lala' })
+    bindings.setSensorCallback((cookie, ev) => console.log(ev), { foo: 'lala' })
 
     const cfg: SensorConfig = {
         alwaysOnEnabled: true,
