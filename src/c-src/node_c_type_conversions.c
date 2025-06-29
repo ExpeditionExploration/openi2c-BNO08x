@@ -732,6 +732,7 @@ napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     napi_value shtpEvent;
     napi_value sh2SensorConfigResp;
 
+    fprintf(stderr, "evt->eventId==%d\n", evt->eventId);
     // Fill in sh2_AsyncEvent_t fields selectively based on the eventId
     if (evt->eventId == SH2_GET_FEATURE_RESP) { // Populate the sensorConfigResp
         // field with the SHTP_EVENT value.
@@ -835,10 +836,7 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
         status = napi_get_value_bool(env, changeSensitivityEnabled,
                                      &result->changeSensitivityEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // changeSensitivityRelative
     status = napi_has_named_property(env, value, "changeSensitivityRelative",
@@ -852,10 +850,7 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
         status = napi_get_value_bool(env, changeSensitivityRelative,
                                      &result->changeSensitivityRelative);
         if (status != napi_ok) { return EXIT_FAILURE; }
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // wakeupEnabled
     status = napi_has_named_property(env, value, "wakeupEnabled", &has_prop);
@@ -867,10 +862,7 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
         status =
             napi_get_value_bool(env, wakeupEnabled, &result->wakeupEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // alwaysOnEnabled
     status = napi_has_named_property(env, value, "alwaysOnEnabled", &has_prop);
@@ -879,13 +871,13 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
         status = napi_get_named_property(env, value, "alwaysOnEnabled",
                                          &alwaysOnEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
-        status =
-            napi_get_value_bool(env, alwaysOnEnabled, &result->alwaysOnEnabled);
+        bool tmp;
+        status = napi_get_value_bool(env, alwaysOnEnabled, &tmp);
         if (status != napi_ok) { return EXIT_FAILURE; }
+        result->alwaysOnEnabled = tmp ? 1 : 0;
     } else if (!supplement_with_defaults) {
         return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // sniffEnabled
     status = napi_has_named_property(env, value, "sniffEnabled", &has_prop);
@@ -896,10 +888,7 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
         if (status != napi_ok) { return EXIT_FAILURE; }
         status = napi_get_value_bool(env, sniffEnabled, &result->sniffEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // changeSensitivity
     status =
@@ -920,10 +909,7 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
             return EXIT_FAILURE;
         }
         result->changeSensitivity = (uint16_t)tmp;
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // reportInterval_us
     status =
@@ -939,10 +925,7 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
         status = napi_get_value_uint32(env, reportInterval_us, &tmp);
         if (status != napi_ok) { return EXIT_FAILURE; }
         result->reportInterval_us = tmp;
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // batchInterval_us
     status = napi_has_named_property(env, value, "batchInterval_us", &has_prop);
@@ -957,10 +940,7 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
         status = napi_get_value_uint32(env, batchInterval_us, &tmp);
         if (status != napi_ok) { return EXIT_FAILURE; }
         result->batchInterval_us = tmp;
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
-    } // else { The struct was memset() to zero, and sensor defaults apply for
-      // this reason. }
+    }
 
     // sensorSpecific
     status = napi_has_named_property(env, value, "sensorSpecific", &has_prop);

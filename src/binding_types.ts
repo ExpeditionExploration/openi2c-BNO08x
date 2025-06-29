@@ -69,7 +69,7 @@ export enum SensorId {
 
 export type SensorConfig = {
     /** Change sensitivity enabled */
-    changeSensitivityEnabled: boolean,
+    changeSensitivityEnabled?: boolean,
 
     /** Change sensitivity - true if relative; false if absolute */
     changeSensitivityRelative?: boolean,

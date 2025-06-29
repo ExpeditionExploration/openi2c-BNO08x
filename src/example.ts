@@ -12,12 +12,10 @@ async function main(): Promise<void> {
 
     const cfg: SensorConfig = {
         alwaysOnEnabled: true,
-        changeSensitivityEnabled: false,
-        wakeupEnabled: true, // Must be true to get reports
-        reportInterval_us: 1000,
+        reportInterval_us: 10000,
     }
-    bindings.devOn()
     bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg)
+    bindings.devOn()
 
     for (let i = 0; i < 50; i++) {
         await sleep(200)

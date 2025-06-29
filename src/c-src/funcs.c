@@ -8,7 +8,7 @@
 
 #include "error.h"
 #include "node_c_type_conversions.h"
-#include "sh2/sh2.h"
+#include "sh2/sh2_err.h"
 #include "sh2/sh2_hal.h"
 #include "sh2_hal_supplement.h"
 #include "uv/unix.h"
@@ -393,8 +393,8 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
 
     // Prevents jsFn and cookie from being garbage collected in case
     // there are no references left in the node side of things.
-    status = napi_create_reference(env, jsFn, 1,
-                                   &_async_event_callback->jsFn_ref);
+    status =
+        napi_create_reference(env, jsFn, 1, &_async_event_callback->jsFn_ref);
     if (status != napi_ok) {
         napi_throw_error(env, NULL, "Couldn't create ref\n");
     }
@@ -439,7 +439,11 @@ napi_value cb_get_sensor_config(napi_env env, napi_callback_info info) {
 
     // Get sensor id
     uint32_t sensor_id;
-    napi_get_value_uint32(env, argv[0], &sensor_id);
+    napi_status status = napi_get_value_uint32(env, argv[0], &sensor_id);
+    if (status != napi_ok) {
+        fprintf(stderr, "status=%d\n", status);
+        napi_throw_error(env, NULL, "Invalid SensorId");
+    }
 
     // Get sensor config
     sh2_SensorConfig_t config;
@@ -476,13 +480,18 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
     }
 
     // Convert sensor config to C struct
-    // The first argument is the sensor id, the second is the sensor config
-    sh2_SensorConfig_t config;
-    if (from_SensorConfig_to_c(env, argv[1], &config) == 0) {
+    // The first argument in argv is the sensor id, the second is the sensor
+    // config
+    static sh2_SensorConfig_t config;
+    if (from_SensorConfig_to_c(env, argv[1], &config) != 0) {
         napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
                          "Failed to convert sensor config from napi_value");
         return NULL;
     }
+
+    fprintf(stdout, "sensorConfig:\n");
+    fprintf(stdout, "\tinterval: %d\n", config.reportInterval_us);
+    fprintf(stdout, "\talways-on: %d\n", config.alwaysOnEnabled);
 
     // Read the sensor id from the first argument
     uint32_t sensor_id;
@@ -495,7 +504,7 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
 
     // Set sensor config
     int code;
-    if ((code = sh2_setSensorConfig(sensor_id, &config)) < 0) {
+    if ((code = sh2_setSensorConfig(sensor_id, &config)) != SH2_OK) {
         printf("Failed to set sensor config with code: %d\n", code);
         napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
                          "Failed to set sensor config");
@@ -506,12 +515,18 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
 }
 
 napi_value cb_devOn(napi_env env, napi_callback_info info) {
-    sh2_devOn();
+    int code;
+    if ((code = sh2_devOn()) != SH2_OK) {
+        fprintf(stderr, "devOn failed with code %d\n", code);
+        napi_throw_error(env, NULL, "Could not turn sensorhub on");
+    }
     return NULL;
 }
 
 napi_value cb_devReset(napi_env env, napi_callback_info info) {
-    sh2_devReset();
+    if (sh2_devReset() != SH2_OK) {
+        napi_throw_error(env, NULL, "Could not reset the sensor");
+    };
     return NULL;
 }
 

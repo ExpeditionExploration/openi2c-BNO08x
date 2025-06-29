@@ -94,7 +94,10 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
         return 0;
     }
     *t_us = self->getTimeUs(self);
-    return n;
+    const uint16_t ret_val =
+        (((uint16_t)pBuffer[0]) & 0x007f) | ((uint16_t)pBuffer[1] << 8);
+    fprintf(stdout, "read len: %d\n", ret_val);
+    return ret_val;
 }
 
 // This function supports writing data to the sensor hub.
