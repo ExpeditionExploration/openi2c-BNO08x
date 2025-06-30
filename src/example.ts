@@ -48,5 +48,7 @@ async function main(): Promise<void> {
         await sleep(100)
         bindings.service()
     }
+
+    bindings.close()
 }
 main().then(() => console.log("done"));

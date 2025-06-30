@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -88,16 +89,30 @@ int open_i2c(sh2_Hal_t* self) {
 int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
                   uint32_t* t_us) {
     i2c_settings_t* settings = &CURRENT_I2C_SETTINGS;
-    const ssize_t n = read(settings->i2c_fd, pBuffer, len);
+    static bool is_retry;
+    static u_int16_t length;
+    if (!is_retry) {
+        const ssize_t n = read(settings->i2c_fd, pBuffer, 4); // header
+        length = *(u_int16_t*)pBuffer;
+        length &= 0x7fff;
+        length = le16toh(length);
+        if (n < 0) {
+            perror("read_from_i2c");
+            return 0;
+        }
+        if (length == 0) { return 0; }
+        is_retry = true;
+        return 0;
+    }
+    const ssize_t n = read(settings->i2c_fd, pBuffer, length + 4);
     if (n < 0) {
         perror("read_from_i2c");
         return 0;
     }
+    is_retry = false;
     *t_us = self->getTimeUs(self);
-    const uint16_t ret_val =
-        (((uint16_t)pBuffer[0]) & 0x007f) | ((uint16_t)pBuffer[1] << 8);
     // fprintf(stdout, "read len: %d\n", ret_val);
-    return ret_val;
+    return n;
 }
 
 // This function supports writing data to the sensor hub.
