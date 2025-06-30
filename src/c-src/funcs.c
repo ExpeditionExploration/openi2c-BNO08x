@@ -371,13 +371,6 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     napi_value jsFn = argv[0];
     napi_value jsCookie = argv[1];
 
-    napi_valuetype jsFn_t, jsCookie_t;
-    status = napi_typeof(env, jsFn, &jsFn_t);
-    napi_status status2 = napi_typeof(env, jsCookie, &jsCookie_t);
-    fprintf(stderr,
-            "status jsFn: %d, status jsCookie: %d, typeof jsCookie: %d\n",
-            status, status2, jsCookie_t);
-
     // Get the bus number and address from the I2C settings
     // i2c_settings_t     settings = get_i2c_settings();
     if (_async_event_callback != NULL) {
@@ -488,10 +481,6 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
                          "Failed to convert sensor config from napi_value");
         return NULL;
     }
-
-    fprintf(stdout, "sensorConfig:\n");
-    fprintf(stdout, "\tinterval: %d\n", config.reportInterval_us);
-    fprintf(stdout, "\talways-on: %d\n", config.alwaysOnEnabled);
 
     // Read the sensor id from the first argument
     uint32_t sensor_id;

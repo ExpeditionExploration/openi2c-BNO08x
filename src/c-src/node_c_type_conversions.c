@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "error.h"
+#include "sensor_report_auxialiry_fns.h"
 #include "sh2/sh2.h"
 
 void free_event(napi_env env, void* finalize_data, void* finalize_hint) {
@@ -53,6 +54,14 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
                          "Failed to set NAPI property");
         return NULL;
     }
+
+    // Finally set getters for the actual sensor values.
+    switch (ev->reportId) {
+        case SH2_ACCELEROMETER:
+            add_getters_to_accelerometer_report(env, obj);
+            break;
+    }
+
     return obj;
 }
 
@@ -732,7 +741,6 @@ napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     napi_value shtpEvent;
     napi_value sh2SensorConfigResp;
 
-    fprintf(stderr, "evt->eventId==%d\n", evt->eventId);
     // Fill in sh2_AsyncEvent_t fields selectively based on the eventId
     if (evt->eventId == SH2_GET_FEATURE_RESP) { // Populate the sensorConfigResp
         // field with the SHTP_EVENT value.

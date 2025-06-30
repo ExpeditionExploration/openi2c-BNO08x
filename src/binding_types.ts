@@ -4,7 +4,10 @@ export type SensorEvent = {
     delayMicroseconds: number,
     len: number,
     reportId: number,
-    report: Buffer
+    report: Buffer,
+    x?: number,
+    y?: number,
+    z?: number,
 }
 
 export type SensorCallback = (cookie: any, event: SensorEvent) => void;
