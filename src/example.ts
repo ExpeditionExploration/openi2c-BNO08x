@@ -1,6 +1,4 @@
 import { bindings, SensorConfig, SensorId } from '.'
-import { BNO_REPORT_ACCELEROMETER } from './constants';
-
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -11,7 +9,7 @@ async function main(): Promise<void> {
     bindings.open((cookie, ev) => { console.log(ev); }, { foo: 'lala' })
     bindings.setSensorCallback(
         (cookie, ev) => {
-            if (ev.reportId == BNO_REPORT_ACCELEROMETER) {
+            if (ev.reportId == SensorId.SH2_ACCELEROMETER) {
                 console.log(`X: ${ev.x}\nY: ${ev.y}\nZ: ${ev.z}`)
                 console.log("--------------------")
             }

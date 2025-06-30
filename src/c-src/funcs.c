@@ -8,6 +8,7 @@
 
 #include "error.h"
 #include "node_c_type_conversions.h"
+#include "sh2/sh2.h"
 #include "sh2/sh2_err.h"
 #include "sh2/sh2_hal.h"
 #include "sh2_hal_supplement.h"
@@ -475,7 +476,8 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
     // Convert sensor config to C struct
     // The first argument in argv is the sensor id, the second is the sensor
     // config
-    static sh2_SensorConfig_t config;
+    static sh2_SensorConfig_t configs[SH2_MAX_SENSOR_ID + 1];
+    sh2_SensorConfig_t config;
     if (from_SensorConfig_to_c(env, argv[1], &config) != 0) {
         napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
                          "Failed to convert sensor config from napi_value");
@@ -491,9 +493,13 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
         return NULL;
     }
 
+    // Move config to static memory
+    memcpy(&configs[sensor_id], &config, sizeof(sh2_SensorConfig_t));
+
     // Set sensor config
     int code;
-    if ((code = sh2_setSensorConfig(sensor_id, &config)) != SH2_OK) {
+    if ((code = sh2_setSensorConfig(sensor_id, &configs[sensor_id])) !=
+        SH2_OK) {
         printf("Failed to set sensor config with code: %d\n", code);
         napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
                          "Failed to set sensor config");
