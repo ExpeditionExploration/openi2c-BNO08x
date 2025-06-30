@@ -25,14 +25,34 @@ export type ProductId = {
 
 export enum SensorId {
     SH2_RAW_ACCELEROMETER = 0x14,
+    /**
+     * Acceleration including gravity. Unit is m/s^2.
+     */
     SH2_ACCELEROMETER = 0x01,
+    /**
+     * Acceleration without gravity. Unit is m/s^2.
+     */
     SH2_LINEAR_ACCELERATION = 0x04,
+    /**
+     * Gravity components on sensor's coordinate frame. Unit is m/s^2.
+     */
     SH2_GRAVITY = 0x06,
     SH2_RAW_GYROSCOPE = 0x15,
     SH2_GYROSCOPE_CALIBRATED = 0x02,
     SH2_GYROSCOPE_UNCALIBRATED = 0x07,
+    /**
+     * Magnetic fields on each sensor axis. Units are ADC's.
+     */
     SH2_RAW_MAGNETOMETER = 0x16,
+    /**
+     * Magnetic fields on each sensor axis. Units are uTesla.
+     * See more in the SH-2 Reference Manual.
+     */
     SH2_MAGNETIC_FIELD_CALIBRATED = 0x03,
+    /**
+     * Magnetic fields on each sensor axis. Units are uTesla.
+     * See more in the SH-2 Reference Manual.
+     */
     SH2_MAGNETIC_FIELD_UNCALIBRATED = 0x0f,
     SH2_ROTATION_VECTOR = 0x05,
     SH2_GAME_ROTATION_VECTOR = 0x08,
