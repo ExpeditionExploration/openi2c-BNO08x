@@ -8,6 +8,25 @@ export type SensorEvent = {
     x?: number,
     y?: number,
     z?: number,
+    /**
+     * Quaternion i-component
+     */
+    i?: number,
+    /**
+     * Quaternion j-component
+     */
+    j?: number,
+    /**
+     * Quaternion k-component
+     */
+    k?: number,
+    /**
+     * Quaternion real-component
+     */
+    real?: number,
+    pitch?: number,
+    yaw?: number,
+    roll?: number,
 }
 
 export type SensorCallback = (cookie: any, event: SensorEvent) => void;
@@ -54,6 +73,11 @@ export enum SensorId {
      * See more in the SH-2 Reference Manual.
      */
     SH2_MAGNETIC_FIELD_UNCALIBRATED = 0x0f,
+    /**
+     * The rotation vector sensor reports the orientation of the device. The 
+     * format of the rotation vector is a unit quaternion. Properties for easy
+     * access to yaw, pitch and roll are also provided.
+     */
     SH2_ROTATION_VECTOR = 0x05,
     SH2_GAME_ROTATION_VECTOR = 0x08,
     SH2_GEOMAGNETIC_ROTATION_VECTOR = 0x09,

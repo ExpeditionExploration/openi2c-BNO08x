@@ -64,12 +64,18 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
         case SH2_RAW_MAGNETOMETER:
         case SH2_MAGNETIC_FIELD_UNCALIBRATED:
         case SH2_MAGNETIC_FIELD_CALIBRATED:
-            ret = add_getters_to_acceleration_report(env, obj);
+            ret = add_properties_to_acceleration_report(env, obj);
             if (ret != 0) {
-                napi_throw_error(env, NULL, "Couldn't create SensorEvent");
+                // add_properties_* already throws napi error
                 return NULL;
             }
             break;
+        case SH2_ROTATION_VECTOR:
+        ret = add_properties_to_rotation_vector(env, obj);
+        if (ret != 0) {
+            // add_properties_to_* already throws napi error
+            return NULL;
+        }
     }
 
     return obj;

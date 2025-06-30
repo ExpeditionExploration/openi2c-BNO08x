@@ -11,3 +11,5 @@ extern const char* ERROR_TRANSLATING_NODE_TO_STRUCT;
 extern const char* ERROR_CREATING_NAPI_VALUE;
 extern const char* ERROR_INTERACTING_WITH_DRIVER;
 extern const char* REF_ERROR;
+
+extern const char* SENSOR_REPORT_ERROR;

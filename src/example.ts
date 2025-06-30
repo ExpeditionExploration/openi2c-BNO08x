@@ -19,6 +19,8 @@ async function main(): Promise<void> {
                 console.log(`RAW MAGNETOMETER X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             } else if (ev.reportId == SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED) {
                 console.log(`MAGNETIC FIELD UC X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
+            } else if (ev.reportId == SensorId.SH2_ROTATION_VECTOR) {
+                console.log(`ROTATION VECTOR: pitch:${ev.pitch}, yaw:${ev.yaw}, roll:${ev.roll} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             }
         }, { foo: 'lala' }
     )
@@ -27,11 +29,16 @@ async function main(): Promise<void> {
         alwaysOnEnabled: true,
         reportInterval_us: 100000,
     }
-    bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg_accel)
-    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, cfg_accel)
-    bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_accel)
-    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, cfg_accel)
-    bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, cfg_accel)
+    const cfg_disabled: SensorConfig = {
+        alwaysOnEnabled: false,
+        reportInterval_us: 0
+    }
+    bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg_disabled)
+    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, cfg_disabled)
+    bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_disabled)
+    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, cfg_disabled)
+    bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, cfg_disabled)
+    bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, cfg_accel)
     bindings.devOn()
 
     for (let i = 0; i < 50; i++) {

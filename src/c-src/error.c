@@ -13,3 +13,4 @@ const char* ERROR_TRANSLATING_NODE_TO_STRUCT =
     "could't translate value(s) in node value to C struct";
 const char* ERROR_CREATING_NAPI_VALUE = "couldn't create a napi value";
 const char* REF_ERROR = "Unexpected ref count";
+const char* SENSOR_REPORT_ERROR = "error constructing report object";
