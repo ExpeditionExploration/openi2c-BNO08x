@@ -61,6 +61,7 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
         case SH2_ACCELEROMETER:
         case SH2_LINEAR_ACCELERATION:
         case SH2_GRAVITY:
+        case SH2_RAW_MAGNETOMETER:
             ret = add_getters_to_acceleration_report(env, obj);
             if (ret != 0) {
                 napi_throw_error(env, NULL, "Couldn't create SensorEvent");

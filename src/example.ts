@@ -15,6 +15,8 @@ async function main(): Promise<void> {
                 // console.log(`LIN_ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             } else if (ev.reportId == SensorId.SH2_GRAVITY) {
                 console.log(`GRAVITY X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
+            } else if (ev.reportId == SensorId.SH2_RAW_MAGNETOMETER) {
+                console.log(`RAW MAGNETOMETER X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             }
         }, { foo: 'lala' }
     )
@@ -26,6 +28,7 @@ async function main(): Promise<void> {
     bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg_accel)
     bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, cfg_accel)
     bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_accel)
+    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, cfg_accel)
     bindings.devOn()
 
     for (let i = 0; i < 50; i++) {
