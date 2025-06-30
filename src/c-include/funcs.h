@@ -15,5 +15,6 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info);
 napi_value cb_devOn(napi_env env, napi_callback_info info);
 napi_value cb_devReset(napi_env env, napi_callback_info info);
 napi_value cb_devSleep(napi_env env, napi_callback_info info);
+napi_value cb_setFrs(napi_env env, napi_callback_info info);
 
 #endif

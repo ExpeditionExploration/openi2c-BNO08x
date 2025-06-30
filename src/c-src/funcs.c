@@ -529,3 +529,60 @@ napi_value cb_devSleep(napi_env env, napi_callback_info info) {
     sh2_devSleep();
     return NULL;
 }
+
+napi_value cb_setFrs(napi_env env, napi_callback_info info) {
+    uint16_t recordId; // Which record to set.
+    uint16_t words;    // Number of 32-bit words to write or 0 to delete record.
+    void *data;        // Pointer to the buffer to write.
+    size_t data_len;
+
+    // Get arguments
+    size_t argc = 2; // Record ID to write and the buffer for it.
+    napi_value argv[2];
+
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Error setting frs");
+        return NULL;
+    }
+    if (argc != 2) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Exactly 2 arguments expected.");
+        return NULL;
+    }
+
+    // Read the buffer to be passed for sh2_setFrs(..)
+    status = napi_get_buffer_info(env, argv[1], &data, &data_len);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Second argument must be a buffer.");
+        return NULL;
+    }
+    if (data_len % 4) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Invalid buffer. Is it from getFrs()?");
+        return NULL;
+    }
+    words = data_len / 4;
+
+    // Get the record id to write
+    uint32_t tmp;
+    status = napi_get_value_uint32(env, argv[0], &tmp);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "First argument must be number representing the FRS "
+                         "record to be written.");
+        return NULL;
+    }
+    recordId = tmp;
+
+    // Write the record
+    int code = sh2_setFrs(recordId, data, words);
+    if (code != SH2_OK) {
+        napi_throw_error(
+            env, UNKNOWN_ERROR,
+            "Unknown error. Do the designated record and the buffer match?");
+        return NULL;
+    }
+
+    return NULL; // No throw; OK.
+}

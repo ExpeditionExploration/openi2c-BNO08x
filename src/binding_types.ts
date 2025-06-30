@@ -414,13 +414,16 @@ export type BNO08X = {
 
     /**
      * @brief Set an FRS record
+     * 
+     * If it doesn't throw anything, writing the designated setting was success.
      *
      * @param  recordId Which FRS Record to set.
-     * @param  pData pointer to buffer containing the new data.
-     * @param  words number of 32-bit words to write.  (0 to delete record.)
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
+     * @param  fsrData Buffer containing data to be written.
+     * 
+     * @throws ARGUMENT_ERROR
+     * @throws UNKNOWN_ERROR
      */
-    setFrs: (recordId: number, fsrData: ArrayBuffer) => void, // THrows on error
+    setFrs: (recordId: number, fsrData: Buffer) => void, // THrows on error
 
     /**
      * @brief Get error counts.

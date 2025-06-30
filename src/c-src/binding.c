@@ -1,11 +1,12 @@
-#include "funcs.h"
 #include <node/node_api.h>
 #include <stdint.h>
 #include <string.h>
 
+#include "funcs.h"
+
 static uint8_t register_fn(napi_env env, napi_value exports, const char* name,
                            napi_callback cb, void* context) {
-    napi_value  fn;
+    napi_value fn;
     napi_status status;
     status = napi_create_function(env, name, strlen(name), cb, context, &fn);
     status |= napi_set_named_property(env, exports, name, fn);
@@ -30,6 +31,7 @@ napi_value init(napi_env env, napi_value exports) {
     register_fn(env, exports, "devReset", cb_devReset, NULL);
     register_fn(env, exports, "devSleep", cb_devSleep, NULL);
     register_fn(env, exports, "close", cb_sh2_close, NULL);
+    register_fn(env, exports, "setFrs", cb_setFrs, NULL);
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)
