@@ -56,9 +56,16 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     }
 
     // Finally set getters for the actual sensor values.
+    uint8_t ret;
     switch (ev->reportId) {
         case SH2_ACCELEROMETER:
-            add_getters_to_accelerometer_report(env, obj);
+        case SH2_LINEAR_ACCELERATION:
+        case SH2_GRAVITY:
+            ret = add_getters_to_acceleration_report(env, obj);
+            if (ret != 0) {
+                napi_throw_error(env, NULL, "Couldn't create SensorEvent");
+                return NULL;
+            }
             break;
     }
 

@@ -4,7 +4,7 @@
 
 #include "error.h"
 
-uint8_t add_getters_to_accelerometer_report(napi_env env, napi_value report) {
+uint8_t add_getters_to_acceleration_report(napi_env env, napi_value report) {
     napi_value report_buf;
 
     // Get buffer from the report

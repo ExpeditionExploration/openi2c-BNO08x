@@ -6,25 +6,30 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function main(): Promise<void> {
     // Set bus number and device address
     bindings.setI2CConfig(1, 0x4b)
-    bindings.open((cookie, ev) => { console.log(ev); }, { foo: 'lala' })
+    bindings.open((cookie, ev) => { /*console.log(ev);*/ }, { foo: 'lala' })
     bindings.setSensorCallback(
         (cookie, ev) => {
             if (ev.reportId == SensorId.SH2_ACCELEROMETER) {
-                console.log(`X: ${ev.x}\nY: ${ev.y}\nZ: ${ev.z}`)
-                console.log("--------------------")
+                console.log(`ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
+            } else if (ev.reportId == SensorId.SH2_LINEAR_ACCELERATION) {
+                // console.log(`LIN_ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
+            } else if (ev.reportId == SensorId.SH2_GRAVITY) {
+                console.log(`GRAVITY X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             }
         }, { foo: 'lala' }
     )
 
-    const cfg: SensorConfig = {
+    const cfg_accel: SensorConfig = {
         alwaysOnEnabled: true,
         reportInterval_us: 10000,
     }
-    bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg)
+    bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg_accel)
+    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, cfg_accel)
+    bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_accel)
     bindings.devOn()
 
     for (let i = 0; i < 50; i++) {
-        await sleep(200)
+        await sleep(100)
         bindings.service()
     }
 }

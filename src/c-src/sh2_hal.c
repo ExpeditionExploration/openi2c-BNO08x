@@ -96,7 +96,7 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
     *t_us = self->getTimeUs(self);
     const uint16_t ret_val =
         (((uint16_t)pBuffer[0]) & 0x007f) | ((uint16_t)pBuffer[1] << 8);
-    fprintf(stdout, "read len: %d\n", ret_val);
+    // fprintf(stdout, "read len: %d\n", ret_val);
     return ret_val;
 }
 
@@ -112,7 +112,7 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
 // accepted.  It need not block.  The actual transmission of
 // the data can continue after this function returns.
 int write_to_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned int len) {
-    fprintf(stderr, "write_to_i2c, len=%d\n", len);
+    // fprintf(stderr, "write_to_i2c, len=%d\n", len);
     i2c_settings_t* settings = &CURRENT_I2C_SETTINGS;
     ssize_t n = write(settings->i2c_fd, pBuffer, len);
     if (n <= 0)
