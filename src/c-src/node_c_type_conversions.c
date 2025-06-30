@@ -64,6 +64,8 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
         case SH2_RAW_MAGNETOMETER:
         case SH2_MAGNETIC_FIELD_UNCALIBRATED:
         case SH2_MAGNETIC_FIELD_CALIBRATED:
+        case SH2_GYROSCOPE_UNCALIBRATED:
+        case SH2_GYROSCOPE_CALIBRATED:
             ret = add_properties_to_acceleration_report(env, obj);
             if (ret != 0) {
                 // add_properties_* already throws napi error
@@ -71,11 +73,11 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
             }
             break;
         case SH2_ROTATION_VECTOR:
-        ret = add_properties_to_rotation_vector(env, obj);
-        if (ret != 0) {
-            // add_properties_to_* already throws napi error
-            return NULL;
-        }
+            ret = add_properties_to_rotation_vector(env, obj);
+            if (ret != 0) {
+                // add_properties_to_* already throws napi error
+                return NULL;
+            }
     }
 
     return obj;

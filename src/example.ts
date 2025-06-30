@@ -21,6 +21,8 @@ async function main(): Promise<void> {
                 console.log(`MAGNETIC FIELD UC X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             } else if (ev.reportId == SensorId.SH2_ROTATION_VECTOR) {
                 console.log(`ROTATION VECTOR: pitch:${ev.pitch}, yaw:${ev.yaw}, roll:${ev.roll} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
+            } else if (ev.reportId == SensorId.SH2_GYROSCOPE_UNCALIBRATED) {
+                console.log(`GYRO uncalibrated X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             }
         }, { foo: 'lala' }
     )
@@ -38,7 +40,8 @@ async function main(): Promise<void> {
     bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_disabled)
     bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, cfg_disabled)
     bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, cfg_disabled)
-    bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, cfg_accel)
+    bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, cfg_disabled)
+    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, cfg_accel)
     bindings.devOn()
 
     for (let i = 0; i < 50; i++) {
