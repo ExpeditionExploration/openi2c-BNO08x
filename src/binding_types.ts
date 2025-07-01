@@ -294,6 +294,137 @@ export enum WheelDatatype {
     Velocity = 1,
 }
 
+export enum FrsId {
+   /**
+    * Static calibration – AGM
+    */
+    StaticAGMCalibration = 0x7979,
+   /**
+    * Nominal calibration – AGM
+    */
+    NominalAGMCalibration = 0x4D4D,
+    /**
+    Static calibration – SRA
+    */
+    StaticSRACalibration = 0x8A8A,
+    /**
+    Nominal calibration - SRA
+    */
+    NominalSRACalibration = 0x4E4E,
+    /**
+    Dynamic calibration
+    */
+    DynamicCalibration = 0x1F1F,
+    /**
+    MotionEngine power management
+    */
+    MotionEnginePowerManagement = 0xD3E2,
+    /**
+    System orientation
+    */
+    SystemOrientation = 0x2D3E,
+    /**
+    Primary accelerometer orientation
+    */
+    PrimaryAccelerometerOrientation = 0x2D41,
+    /**
+    Screen rotation accelerometer orientation
+    */
+    ScreenRotationAccelerometerOrientation = 0x2D43,
+    /**
+    Gyroscope orientation
+    */
+    GyroscopeOrientation = 0x2D46,
+    /**
+    Magnetometer orientation
+    */
+    MagnetometerOrientation = 0x2D4C,
+    /**
+    AR/VR stabilization – rotation vector
+    */
+    AR_VR_StabilizationRotationVector = 0x3E2D,
+    /**
+    AR/VR stabilization – game rotation vector
+    */
+    AR_VR_StabilizationGameRotationVector = 0x3E2E,
+    /**
+    Significant Motion detector configuration
+    */
+    SignificantMotionDetectorConfig = 0xC274,
+    /**
+    Shake detector configuration
+    */
+    ShakeDetectorConfig = 0x7D7D,
+    /**
+    Maximum fusion period
+    */
+    MaximumFusionPeriod = 0xD7D7,
+    /**
+    Serial number
+    */
+    SerialNumber = 0x4B4B,
+    /**
+    Pickup detector configuration
+    */
+    PickupDetectorConfig = 0x1B2A,
+    /**
+    Flip detector configuration
+    */
+    FlipDetectorConfig = 0xFC94,
+    /**
+    Stability detector configuration
+    */
+    StabilityDetectorConfig = 0xED85,
+    /**
+    Activity Tracker configuration
+    */
+    ActivityTrackerConfig = 0xED88,
+    /**
+    Sleep detector configuration
+    */
+    SleepDetectorConfig = 0xED87,
+    /**
+    Tilt detector configuration
+    */
+    TiltDetectorConfig = 0xED89,
+    /**
+    Pocket detector configuration
+    */
+    PocketDetectorConfig = 0xEF27,
+    /**
+    Circle detector configuration
+    */
+    CircleDetectorConfig = 0xEE51,
+    /**
+    User record. 64 words or 256 bytes of data of your choice
+    */
+    UserRecord = 0x74B4,
+    /**
+    MotionEngine Time Source Selection
+    */
+    MotionEngineTimeSourceSelect = 0xD403,
+    /**
+    UART Output Format Selection
+    */
+    UARTOutputFormat = 0xA1A1,
+    /**
+    Gyro-Integrated Rotation Vector configuration
+    */
+    GyroIntegratedRotationVectorConfig = 0xA1A2,
+    /**
+    Fusion Control Flags
+    */
+    FusionControlFlags = 0xA1A3,
+    /**
+    Simple Calibration Configuration
+    */
+    SimpleCalibrationConfig = 0xA1A4,
+    /**
+    Nominal Simple Calibration Configuration
+    */
+    NominalSimpleCalibrationConfig = 0XA1A5,
+}
+
 /**
  * @brief BNO08X API
  */
@@ -403,14 +534,12 @@ export type BNO08X = {
 
     /**
      * @brief Get an FRS record.
+     * 
+     * Retrieve stored setting.
      *
      * @param  recordId Which FRS Record to retrieve.
-     * @param  pData pointer to buffer to receive the results
-     * @param[in] words Size of pData buffer, in 32-bit words.
-     * @param[out] words Number of 32-bit words retrieved.
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
      */
-    getFrs: (recordId: number) => ArrayBuffer, // Throws on error
+    getFrs: (recordId: FrsId) => Buffer,
 
     /**
      * @brief Set an FRS record
@@ -423,7 +552,7 @@ export type BNO08X = {
      * @throws ARGUMENT_ERROR
      * @throws UNKNOWN_ERROR
      */
-    setFrs: (recordId: number, fsrData: Buffer) => void, // THrows on error
+    setFrs: (recordId: FrsId, fsrData: Buffer) => void, // THrows on error
 
     /**
      * @brief Get error counts.

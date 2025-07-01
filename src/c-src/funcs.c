@@ -586,3 +586,50 @@ napi_value cb_setFrs(napi_env env, napi_callback_info info) {
 
     return NULL; // No throw; OK.
 }
+
+napi_value cb_getFrs(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, UNKNOWN_ERROR, "Couldn't parse arguments.");
+        return NULL;
+    }
+    if (argc != 1) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Expected exactly one number argument designating the "
+                         "setting to fetch.");
+        return NULL;
+    }
+
+    uint32_t _recordId;
+    uint16_t recordId;
+    status = napi_get_value_uint32(env, argv[0], &_recordId);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Expected recordId argument.");
+        return NULL;
+    }
+    recordId = _recordId;
+
+    uint32_t data[300];
+    uint16_t words = 75; // 75 * 4 = 300
+    int code = sh2_getFrs(recordId, data, &words);
+    if (code != SH2_OK) {
+        napi_throw_error(env, UNKNOWN_ERROR,
+                         "An error happened while fetching FRS data.");
+        return NULL;
+    }
+
+    // Create Buffer for it
+    napi_value buf;
+    void *void_buf;
+    status = napi_create_buffer_copy(env, words * 4, data, &void_buf, &buf);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+                         "Unable to create napi Buffer.");
+        return NULL;
+    }
+
+    return buf; // No throw; OK!
+}

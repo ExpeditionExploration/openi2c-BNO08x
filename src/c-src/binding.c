@@ -32,6 +32,7 @@ napi_value init(napi_env env, napi_value exports) {
     register_fn(env, exports, "devSleep", cb_devSleep, NULL);
     register_fn(env, exports, "close", cb_sh2_close, NULL);
     register_fn(env, exports, "setFrs", cb_setFrs, NULL);
+    register_fn(env, exports, "getFrs", cb_getFrs, NULL);
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)
