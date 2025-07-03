@@ -511,40 +511,6 @@ napi_value c_to_Counts(napi_env env, sh2_Counts_t* counts) {
     return obj;
 }
 
-napi_value c_to_TareBasis(napi_env env) {
-    napi_value obj;
-    napi_status status;
-    status = napi_create_object(env, &obj);
-
-    napi_value tare_basis_rotation_vector;
-    napi_value tare_basis_gaming_rotation_vector;
-    napi_value tare_basis_geomagnetic_rotation_vector;
-
-    status |= napi_create_uint32(env, SH2_TARE_BASIS_ROTATION_VECTOR,
-                                 &tare_basis_rotation_vector);
-    status |= napi_create_uint32(env, SH2_TARE_BASIS_GAMING_ROTATION_VECTOR,
-                                 &tare_basis_gaming_rotation_vector);
-    status |=
-        napi_create_uint32(env, SH2_TARE_BASIS_GEOMAGNETIC_ROTATION_VECTOR,
-                           &tare_basis_geomagnetic_rotation_vector);
-
-    status |= napi_set_named_property(env, obj, "TARE_BASIS_ROTATION_VECTOR",
-                                      tare_basis_gaming_rotation_vector);
-    status |=
-        napi_set_named_property(env, obj, "TARE_BASIS_GAMING_ROTATION_VECTOR",
-                                tare_basis_gaming_rotation_vector);
-    status |= napi_set_named_property(env, obj,
-                                      "TARE_BASIS_GEOMAGNETIC_ROTATION_VECTOR",
-                                      tare_basis_gaming_rotation_vector);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Could not construct object TareBasis.");
-        return NULL;
-    }
-    return obj;
-}
-
 napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;
