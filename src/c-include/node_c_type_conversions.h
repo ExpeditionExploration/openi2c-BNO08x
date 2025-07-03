@@ -7,7 +7,6 @@
 #include "sh2/sh2.h"
 
 // C->NAPI
-napi_value c_to_NapiSensorEvent(napi_env env, sh2_SensorEvent_t *ev);
 napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t *cfg);
 napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t *ev);
 napi_value c_to_AsyncEventId(napi_env env);
