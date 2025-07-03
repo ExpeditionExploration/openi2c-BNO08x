@@ -670,42 +670,6 @@ napi_value c_to_MotionIntent(napi_env env) {
     return obj;
 }
 
-napi_value c_to_MotionRequest(napi_env env) {
-    napi_value obj;
-    napi_status status;
-    status = napi_create_object(env, &obj);
-
-    napi_value izro_mr_no_request;
-    napi_value izro_mr_stay_stationary;
-    napi_value izro_mr_stationary_non_urgent;
-    napi_value izro_mr_stationary_urgent;
-
-    status |=
-        napi_create_uint32(env, SH2_IZRO_MR_NO_REQUEST, &izro_mr_no_request);
-    status |= napi_create_uint32(env, SH2_IZRO_MR_STAY_STATIONARY,
-                                 &izro_mr_stay_stationary);
-    status |= napi_create_uint32(env, SH2_IZRO_MR_STATIONARY_NON_URGENT,
-                                 &izro_mr_stationary_non_urgent);
-    status |= napi_create_uint32(env, SH2_IZRO_MR_STATIONARY_URGENT,
-                                 &izro_mr_stationary_urgent);
-
-    status |=
-        napi_set_named_property(env, obj, "NO_REQUEST", izro_mr_no_request);
-    status |= napi_set_named_property(env, obj, "STAY_STATIONARY",
-                                      izro_mr_stay_stationary);
-    status |= napi_set_named_property(env, obj, "STATIONARY_NON_URGENT",
-                                      izro_mr_stationary_non_urgent);
-    status |= napi_set_named_property(env, obj, "STATIONARY_URGENT",
-                                      izro_mr_stationary_urgent);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Couldn't build MotionRequest.");
-        return NULL;
-    }
-    return obj;
-}
-
 napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;

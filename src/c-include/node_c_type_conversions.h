@@ -19,7 +19,6 @@ napi_value c_to_TareBasis(napi_env env);
 napi_value c_to_TareAxis(napi_env env);
 napi_value c_to_Quaternion(napi_env env, sh2_Quaternion_t *qt);
 napi_value c_to_MotionIntent(napi_env env);
-napi_value c_to_MotionRequest(napi_env env);
 napi_value c_to_AsyncEventId(napi_env env);
 napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t *ev);
 napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t *cfg);
