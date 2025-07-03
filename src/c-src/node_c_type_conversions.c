@@ -83,37 +83,6 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     return obj;
 }
 
-napi_value c_to_ProductId(napi_env env, sh2_ProductId_t* id) {
-    napi_status status;
-    napi_value obj; // JS object
-    status = napi_create_object(env, &obj);
-
-    napi_value resetCause;     // uint8_t -> number
-    napi_value swVersionMajor; // uint8_t -> number
-    napi_value swVersionMinor; // uint8_t -> number
-    napi_value swPartNumber;   // uint32_t -> number
-    napi_value swBuildNumber;  // uint32_t -> number
-    napi_value swVersionPatch; // uint16_t -> number
-    napi_value reserved0;      // uint8_t -> number
-    napi_value reserved1;      // uint8_t -> number
-
-    status |= napi_create_uint32(env, id->resetCause, &resetCause);
-    status |= napi_create_uint32(env, id->swVersionMajor, &swVersionMajor);
-    status |= napi_create_uint32(env, id->swVersionMinor, &swVersionMinor);
-    status |= napi_create_uint32(env, id->swPartNumber, &swPartNumber);
-    status |= napi_create_uint32(env, id->swBuildNumber, &swBuildNumber);
-    status |= napi_create_uint32(env, id->swVersionPatch, &swVersionPatch);
-    status |= napi_create_uint32(env, id->reserved0, &reserved0);
-    status |= napi_create_uint32(env, id->reserved1, &reserved1);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Couldn't construct a ProductId");
-    }
-
-    return obj;
-}
-
 napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {
     napi_status status;
     napi_value obj;
