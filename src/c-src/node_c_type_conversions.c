@@ -448,41 +448,6 @@ napi_value c_to_SensorMetadata(napi_env env, sh2_SensorMetadata_t* meta) {
     return obj;
 }
 
-napi_value c_to_ErrorRecord(napi_env env, sh2_ErrorRecord_t* err) {
-    napi_status status;
-    napi_value obj;
-    status = napi_create_object(env, &obj);
-
-    napi_value severity; /**< @brief Error severity, 0: most severe. */
-    napi_value sequence; /**< @brief Sequence number (by severity) */
-    napi_value source; /**< 1-MotionEngine, 2-MotionHub, 3-SensorHub, 4-Chip  */
-    napi_value error;  /**< @brief See SH-2 Reference Manual */
-    napi_value module; /**< @brief See SH-2 Reference Manual */
-    napi_value code;   /**< @brief See SH-2 Reference Manual */
-
-    status |= napi_create_uint32(env, err->severity, &severity);
-    status |= napi_create_uint32(env, err->sequence, &sequence);
-    status |= napi_create_uint32(env, err->source, &source);
-    status |= napi_create_uint32(env, err->error, &error);
-    status |= napi_create_uint32(env, err->module, &module);
-    status |= napi_create_uint32(env, err->code, &code);
-
-    status |= napi_set_named_property(env, obj, "severity", severity);
-    status |= napi_set_named_property(env, obj, "sequence", sequence);
-    status |= napi_set_named_property(env, obj, "source", source);
-    status |= napi_set_named_property(env, obj, "serroreverity", error);
-    status |= napi_set_named_property(env, obj, "smoduleeverity", module);
-    status |= napi_set_named_property(env, obj, "scodeeverity", code);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Couldn't build an ErrorRecord.");
-        return NULL;
-    }
-
-    return obj;
-}
-
 napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;
