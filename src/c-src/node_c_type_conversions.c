@@ -833,8 +833,7 @@ napi_value c_to_ShtpEvent(napi_env env) {
 }
 
 int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
-                              sh2_SensorConfig_t* result,
-                              bool supplement_with_defaults) {
+                              sh2_SensorConfig_t* result) {
     napi_status status;
     napi_value changeSensitivityEnabled;
     napi_value changeSensitivityRelative;
@@ -855,7 +854,6 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
     status = napi_has_named_property(env, value, "changeSensitivityEnabled",
                                      &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status = napi_get_named_property(env, value, "changeSensitivityEnabled",
                                          &changeSensitivityEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
@@ -868,7 +866,6 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
     status = napi_has_named_property(env, value, "changeSensitivityRelative",
                                      &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status =
             napi_get_named_property(env, value, "changeSensitivityRelative",
                                     &changeSensitivityRelative);
@@ -881,7 +878,6 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
     // wakeupEnabled
     status = napi_has_named_property(env, value, "wakeupEnabled", &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status = napi_get_named_property(env, value, "wakeupEnabled",
                                          &wakeupEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
@@ -893,22 +889,18 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
     // alwaysOnEnabled
     status = napi_has_named_property(env, value, "alwaysOnEnabled", &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status = napi_get_named_property(env, value, "alwaysOnEnabled",
                                          &alwaysOnEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
         bool tmp;
         status = napi_get_value_bool(env, alwaysOnEnabled, &tmp);
         if (status != napi_ok) { return EXIT_FAILURE; }
-        result->alwaysOnEnabled = tmp ? 1 : 0;
-    } else if (!supplement_with_defaults) {
-        return EXIT_FAILURE;
+        result->alwaysOnEnabled = tmp ? true : false;
     }
 
     // sniffEnabled
     status = napi_has_named_property(env, value, "sniffEnabled", &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status =
             napi_get_named_property(env, value, "sniffEnabled", &sniffEnabled);
         if (status != napi_ok) { return EXIT_FAILURE; }
@@ -920,7 +912,6 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
     status =
         napi_has_named_property(env, value, "changeSensitivity", &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status = napi_get_named_property(env, value, "changeSensitivity",
                                          &changeSensitivity);
         if (status != napi_ok) { return EXIT_FAILURE; }
@@ -941,7 +932,6 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
     status =
         napi_has_named_property(env, value, "reportInterval_us", &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status = napi_get_named_property(env, value, "reportInterval_us",
                                          &reportInterval_us);
         if (status != napi_ok) { // Invalid property
@@ -955,8 +945,16 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
 
     // batchInterval_us
     status = napi_has_named_property(env, value, "batchInterval_us", &has_prop);
+    if (status != napi_ok) {
+        char error[200];
+        snprintf(error, 200,
+                 "napi_has_named_property(SensorConfig, batchInterval_us) "
+                 "returned with napi status of %d",
+                 status);
+        fprintf(stderr, "%s\n", error);
+        return EXIT_FAILURE;
+    }
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status = napi_get_named_property(env, value, "batchInterval_us",
                                          &batchInterval_us);
         if (status != napi_ok) { // Invalid property
@@ -971,7 +969,6 @@ int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
     // sensorSpecific
     status = napi_has_named_property(env, value, "sensorSpecific", &has_prop);
     if (has_prop) {
-        // No need to supplement anything, since the property is found.
         status = napi_get_named_property(env, value, "sensorSpecific",
                                          &sensorSpecific);
         if (status != napi_ok) { // Invalid property

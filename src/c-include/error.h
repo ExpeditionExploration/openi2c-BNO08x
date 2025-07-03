@@ -13,3 +13,6 @@ extern const char* ERROR_INTERACTING_WITH_DRIVER;
 extern const char* REF_ERROR;
 
 extern const char* SENSOR_REPORT_ERROR;
+
+extern const char* ERROR_EXECUTING_TEST;
+extern const char* ASSERT_ERROR;

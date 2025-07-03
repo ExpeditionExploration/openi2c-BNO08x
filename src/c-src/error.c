@@ -14,3 +14,6 @@ const char* ERROR_TRANSLATING_NODE_TO_STRUCT =
 const char* ERROR_CREATING_NAPI_VALUE = "couldn't create a napi value";
 const char* REF_ERROR = "Unexpected ref count";
 const char* SENSOR_REPORT_ERROR = "error constructing report object";
+
+const char* ERROR_EXECUTING_TEST = "bno08x bad test";
+const char* ASSERT_ERROR = "bno08x test failed assertion";

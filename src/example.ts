@@ -29,18 +29,24 @@ async function main(): Promise<void> {
 
     const cfg_accel: SensorConfig = {
         alwaysOnEnabled: true,
-        reportInterval_us: 100000,
+        reportInterval_us: 12345,
+        changeSensitivityEnabled: true,
+        changeSensitivityRelative: true,
+        wakeupEnabled: true,
+        sniffEnabled: true,
+        changeSensitivity: 12345,
+        batchInterval_us:12345,
     }
     const cfg_disabled: SensorConfig = {
         alwaysOnEnabled: false,
-        reportInterval_us: 0
+        reportInterval_us: 0,
     }
-    bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg_disabled)
-    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, cfg_disabled)
-    bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_disabled)
-    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, cfg_disabled)
-    bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, cfg_disabled)
-    bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, cfg_disabled)
+    // bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg_disabled)
+    // bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, cfg_disabled)
+    // bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_disabled)
+    // bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, cfg_disabled)
+    // bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, cfg_disabled)
+    // bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, cfg_disabled)
     bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, cfg_accel)
     bindings.devOn()
 

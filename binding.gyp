@@ -45,5 +45,29 @@
             "-pedantic",
             "-fPIC"     # Generate position independent code
         ]
+    }, {
+        "target_name": "bno08x_tests",
+        "sources": [
+            "src/c-tests/test_fn_binds.c",
+            "src/c-src/sensor_report_auxialiry_fns.c",
+            "src/c-src/error.c",
+            "src/c-src/node_c_type_conversions.c",
+        ],
+        "include_dirs": [
+            "src/c-include/sh2/",
+            "src/c-include/",
+        ],
+        "cflags": [
+            "-Wall",    # Enable all warnings
+            "-Werror",  # Make them errors
+            "-Wno-missing-braces", # Require braces
+            "-Wextra",
+            "-pedantic",
+            "-fPIC"     # Generate position independent code
+        ],
+        "dependencies": [
+            "sh2",
+            "bno08x_native"
+        ]
     }]
 }
