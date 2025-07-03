@@ -29,13 +29,7 @@ async function main(): Promise<void> {
 
     const cfg_accel: SensorConfig = {
         alwaysOnEnabled: true,
-        reportInterval_us: 12345,
-        changeSensitivityEnabled: true,
-        changeSensitivityRelative: true,
-        wakeupEnabled: true,
-        sniffEnabled: true,
-        changeSensitivity: 12345,
-        batchInterval_us:12345,
+        reportInterval_us: 5000,
     }
     const cfg_disabled: SensorConfig = {
         alwaysOnEnabled: false,
