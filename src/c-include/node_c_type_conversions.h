@@ -9,7 +9,6 @@
 // C->NAPI
 napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t *cfg);
 napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t *ev);
-napi_value c_to_AsyncEventId(napi_env env);
 napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t *ev);
 napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t *cfg);
 
