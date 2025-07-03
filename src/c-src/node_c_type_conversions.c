@@ -483,34 +483,6 @@ napi_value c_to_ErrorRecord(napi_env env, sh2_ErrorRecord_t* err) {
     return obj;
 }
 
-napi_value c_to_Counts(napi_env env, sh2_Counts_t* counts) {
-    napi_value obj;
-    napi_status status;
-    status = napi_create_object(env, &obj);
-
-    napi_value offered;
-    napi_value accepted;
-    napi_value on;
-    napi_value attempted;
-
-    status |= napi_create_uint32(env, counts->offered, &offered);
-    status |= napi_create_uint32(env, counts->accepted, &accepted);
-    status |= napi_create_uint32(env, counts->on, &on);
-    status |= napi_create_uint32(env, counts->attempted, &attempted);
-
-    status |= napi_set_named_property(env, obj, "offered", offered);
-    status |= napi_set_named_property(env, obj, "accepted", accepted);
-    status |= napi_set_named_property(env, obj, "on", on);
-    status |= napi_set_named_property(env, obj, "attempted", attempted);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Couldn't build Counts object");
-        return NULL;
-    }
-    return obj;
-}
-
 napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;
