@@ -545,61 +545,6 @@ napi_value c_to_TareBasis(napi_env env) {
     return obj;
 }
 
-napi_value c_to_TareAxis(napi_env env) {
-    napi_value obj;
-    napi_status status;
-    status = napi_create_object(env, &obj);
-
-    napi_value tare_x;
-    napi_value tare_y;
-    napi_value tare_z;
-    napi_value tare_control_vector_x;
-    napi_value tare_control_vector_y;
-    napi_value tare_control_vector_z;
-    napi_value tare_sequence_default;
-    napi_value tare_sequence_pre;
-    napi_value tare_sequence_post;
-
-    status |= napi_create_uint32(env, SH2_TARE_X, &tare_x);
-    status |= napi_create_uint32(env, SH2_TARE_Y, &tare_y);
-    status |= napi_create_uint32(env, SH2_TARE_Z, &tare_z);
-    status |= napi_create_uint32(env, SH2_TARE_CONTROL_VECTOR_X,
-                                 &tare_control_vector_x);
-    status |= napi_create_uint32(env, SH2_TARE_CONTROL_VECTOR_Y,
-                                 &tare_control_vector_y);
-    status |= napi_create_uint32(env, SH2_TARE_CONTROL_VECTOR_Z,
-                                 &tare_control_vector_z);
-    status |= napi_create_uint32(env, SH2_TARE_CONTROL_SEQUENCE_DEFAULT,
-                                 &tare_sequence_default);
-    status |= napi_create_uint32(env, SH2_TARE_CONTROL_SEQUENCE_PRE,
-                                 &tare_sequence_pre);
-    status |= napi_create_uint32(env, SH2_TARE_CONTROL_SEQUENCE_POST,
-                                 &tare_sequence_post);
-
-    status |= napi_set_named_property(env, obj, "TARE_X", tare_x);
-    status |= napi_set_named_property(env, obj, "SH2_TARE_Y", tare_y);
-    status |= napi_set_named_property(env, obj, "SH2_TARE_Z", tare_z);
-    status |= napi_set_named_property(env, obj, "SH2_TARE_CONTROL_VECTOR_X",
-                                      tare_control_vector_x);
-    status |= napi_set_named_property(env, obj, "SH2_TARE_CONTROL_VECTOR_Y",
-                                      tare_control_vector_y);
-    status |= napi_set_named_property(env, obj, "SH2_TARE_CONTROL_VECTOR_Z",
-                                      tare_control_vector_z);
-    status |= napi_set_named_property(
-        env, obj, "SH2_TARE_CONTROL_SEQUENCE_DEFAULT", tare_sequence_default);
-    status |= napi_set_named_property(env, obj, "SH2_TARE_CONTROL_SEQUENCE_PRE",
-                                      tare_sequence_pre);
-    status |= napi_set_named_property(
-        env, obj, "SH2_TARE_CONTROL_SEQUENCE_POST", tare_sequence_post);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Error constructing object TareAxis.");
-        return NULL;
-    }
-    return obj;
-}
-
 napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;
