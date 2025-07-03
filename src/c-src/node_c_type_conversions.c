@@ -625,51 +625,6 @@ napi_value c_to_Quaternion(napi_env env, sh2_Quaternion_t* qt) {
     return obj;
 }
 
-napi_value c_to_MotionIntent(napi_env env) {
-    napi_value obj;
-    napi_status status;
-    status = napi_create_object(env, &obj);
-
-    napi_value izro_mi_unknown;
-    napi_value izro_mi_stationary_no_vibration;
-    napi_value izro_mi_stationary_with_vibration;
-    napi_value izro_mi_in_motion;
-    napi_value izro_mi_accelerating;
-
-    status |= napi_create_uint32(env, (uint32_t)SH2_IZRO_MI_UNKNOWN,
-                                 &izro_mi_unknown);
-    status |=
-        napi_create_uint32(env, (uint32_t)SH2_IZRO_MI_STATIONARY_NO_VIBRATION,
-                           &izro_mi_stationary_no_vibration);
-    status |=
-        napi_create_uint32(env, (uint32_t)SH2_IZRO_MI_STATIONARY_WITH_VIBRATION,
-                           &izro_mi_stationary_with_vibration);
-    status |= napi_create_uint32(env, (uint32_t)SH2_IZRO_MI_IN_MOTION,
-                                 &izro_mi_in_motion);
-    status |= napi_create_uint32(env, (uint32_t)SH2_IZRO_MI_ACCELERATING,
-                                 &izro_mi_accelerating);
-
-    status |=
-        napi_set_named_property(env, obj, "IZRO_MI_UNKNOWN", izro_mi_unknown);
-    status |=
-        napi_set_named_property(env, obj, "IZRO_MI_STATIONARY_NO_VIBRATION",
-                                izro_mi_stationary_no_vibration);
-    status |=
-        napi_set_named_property(env, obj, "IZRO_MI_STATIONARY_WITH_VIBRATION",
-                                izro_mi_stationary_with_vibration);
-    status |= napi_set_named_property(env, obj, "IZRO_MI_IN_MOTION",
-                                      izro_mi_in_motion);
-    status |= napi_set_named_property(env, obj, "IZRO_MI_ACCELERATING",
-                                      izro_mi_accelerating);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Couldn't create MotionIntent.");
-        return NULL;
-    }
-    return obj;
-}
-
 napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;
