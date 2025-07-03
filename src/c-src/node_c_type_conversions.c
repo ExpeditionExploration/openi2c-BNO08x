@@ -787,51 +787,6 @@ napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     return obj;
 }
 
-napi_value c_to_ShtpEvent(napi_env env) {
-    napi_value obj;
-    napi_status status;
-    status = napi_create_object(env, &obj);
-
-    napi_value tx_discard;
-    napi_value short_fragment;
-    napi_value too_large_payloads;
-    napi_value bad_rx_chan;
-    napi_value bad_tx_chan;
-    napi_value bad_fragment;
-    napi_value bad_sn;
-    napi_value interrupted_payload;
-
-    status |= napi_create_uint32(env, SH2_SHTP_TX_DISCARD, &tx_discard);
-    status |= napi_create_uint32(env, SH2_SHTP_SHORT_FRAGMENT, &short_fragment);
-    status |= napi_create_uint32(env, SH2_SHTP_TOO_LARGE_PAYLOADS,
-                                 &too_large_payloads);
-    status |= napi_create_uint32(env, SH2_SHTP_BAD_RX_CHAN, &bad_rx_chan);
-    status |= napi_create_uint32(env, SH2_SHTP_BAD_TX_CHAN, &bad_tx_chan);
-    status |= napi_create_uint32(env, SH2_SHTP_BAD_FRAGMENT, &bad_fragment);
-    status |= napi_create_uint32(env, SH2_SHTP_BAD_SN, &bad_sn);
-    status |= napi_create_uint32(env, SH2_SHTP_INTERRUPTED_PAYLOAD,
-                                 &interrupted_payload);
-
-    status |= napi_set_named_property(env, obj, "TX_DISCARD", tx_discard);
-    status |=
-        napi_set_named_property(env, obj, "SHORT_FRAGMENT", short_fragment);
-    status |= napi_set_named_property(env, obj, "TOO_LARGE_PAYLOADS",
-                                      too_large_payloads);
-    status |= napi_set_named_property(env, obj, "BAD_RX_CHAN", bad_rx_chan);
-    status |= napi_set_named_property(env, obj, "BAD_TX_CHAN", bad_tx_chan);
-    status |= napi_set_named_property(env, obj, "BAD_FRAGMENT", bad_fragment);
-    status |= napi_set_named_property(env, obj, "BAD_SN", bad_sn);
-    status |= napi_set_named_property(env, obj, "INTERRUPTED_PAYLOAD",
-                                      interrupted_payload);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "couldn't construct ShtpEvent");
-        return NULL;
-    }
-    return obj;
-}
-
 int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
                               sh2_SensorConfig_t* result) {
     napi_status status;

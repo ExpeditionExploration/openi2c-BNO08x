@@ -23,7 +23,6 @@ napi_value c_to_MotionRequest(napi_env env);
 napi_value c_to_AsyncEventId(napi_env env);
 napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t *ev);
 napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t *cfg);
-napi_value c_to_ShtpEvent(napi_env env);
 
 // NAPI->C
 int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
