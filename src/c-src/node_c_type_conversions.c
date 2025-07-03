@@ -600,31 +600,6 @@ napi_value c_to_TareAxis(napi_env env) {
     return obj;
 }
 
-napi_value c_to_Quaternion(napi_env env, sh2_Quaternion_t* qt) {
-    napi_value obj;
-    napi_status status;
-    status = napi_create_object(env, &obj);
-
-    napi_value x, y, z, w;
-
-    status |= napi_create_double(env, qt->x, &x);
-    status |= napi_create_double(env, qt->y, &y);
-    status |= napi_create_double(env, qt->z, &z);
-    status |= napi_create_double(env, qt->w, &w);
-
-    status |= napi_set_named_property(env, obj, "x", x);
-    status |= napi_set_named_property(env, obj, "y", y);
-    status |= napi_set_named_property(env, obj, "z", z);
-    status |= napi_set_named_property(env, obj, "w", w);
-
-    if (status != napi_ok) {
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Couldn't construct a Quaternion.");
-        return NULL;
-    }
-    return obj;
-}
-
 napi_value c_to_AsyncEventId(napi_env env) {
     napi_value obj;
     napi_status status;
