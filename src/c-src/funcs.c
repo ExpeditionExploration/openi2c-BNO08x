@@ -147,10 +147,6 @@ typedef struct {
 static cb_cookie_t *_sensor_callback;
 static cb_cookie_t *_async_event_callback;
 
-static napi_env the_env;
-static void set_napi_env(napi_env env) { the_env = env; }
-static napi_env get_napi_env(void) { return the_env; }
-
 napi_value cb_setI2CSettings(napi_env env, napi_callback_info info) {
     napi_value argv[MAX_ARGUMENTS] = {NULL};
     napi_value this;
@@ -205,7 +201,6 @@ napi_value cb_getI2CSettings(napi_env env, napi_callback_info _) {
 }
 
 napi_value cb_service(napi_env env, napi_callback_info info) {
-    set_napi_env(env);
     sh2_service();
     return NULL;
 }
@@ -342,21 +337,20 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
 }
 
 static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
-    napi_env env = get_napi_env();
     cb_cookie_t *cookie_with_type = cookie;
     napi_status status;
     napi_value return_value;
     uv_thread_t this_thread = uv_thread_self();
     if (!uv_thread_equal(&this_thread, &cookie_with_type->thread)) {
         char *msg = "Not in NodeJS main thread.";
-        napi_throw_error(env, THREADING_ERROR, msg);
+        napi_throw_error(cookie_with_type->env, THREADING_ERROR, msg);
         return;
     }
 
     // Translate sensor event to napi_value
-    napi_value async_event = c_to_AsyncEvent(env, event);
+    napi_value async_event = c_to_AsyncEvent(cookie_with_type->env, event);
     if (async_event == NULL) {
-        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+        napi_throw_error(cookie_with_type->env, ERROR_CREATING_NAPI_VALUE,
                          "Error converting sh2_AsyncEvent_t to JS object.");
         return;
     }
@@ -365,26 +359,28 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     // between cb_service()-calls, the handles need to be fetched again by
     // reference.
     napi_handle_scope scope;
-    status = napi_open_handle_scope(env, &scope);
+    status = napi_open_handle_scope(cookie_with_type->env, &scope);
     if (status != napi_ok) {
-        napi_throw_error(env, ERROR_OPENING_SCOPE, "Couldn't open napi scope.");
+        napi_throw_error(cookie_with_type->env, ERROR_OPENING_SCOPE,
+                         "Couldn't open napi scope.");
         return;
     }
     napi_value cookie_cookie_arg;
     napi_value cookie_jsFn_arg;
-    status = napi_get_reference_value(env, cookie_with_type->cookie_ref,
+    status = napi_get_reference_value(cookie_with_type->env,
+                                      cookie_with_type->cookie_ref,
                                       &cookie_cookie_arg);
     if (status != napi_ok) {
         napi_throw_error(
-            env, REF_ERROR,
+            cookie_with_type->env, REF_ERROR,
             "Error getting value by reference in async_event_callback_broker");
         return;
     }
-    status = napi_get_reference_value(env, cookie_with_type->jsFn_ref,
-                                      &cookie_jsFn_arg);
+    status = napi_get_reference_value(
+        cookie_with_type->env, cookie_with_type->jsFn_ref, &cookie_jsFn_arg);
     if (status != napi_ok) {
         napi_throw_error(
-            env, REF_ERROR,
+            cookie_with_type->env, REF_ERROR,
             "Error getting value by reference in async_event_callback_broker");
         return;
     }
@@ -395,27 +391,26 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
 
     // Call the callback function with the sensor data
     napi_value global;
-    status = napi_get_global(env, &global);
+    status = napi_get_global(cookie_with_type->env, &global);
     if (status != napi_ok) {
-        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+        napi_throw_error(cookie_with_type->env, ERROR_CREATING_NAPI_VALUE,
                          "Couldn't get global object.");
         return;
     }
 
-    status = napi_call_function(env, global, cookie_jsFn_arg, 2, argv,
-                                &return_value);
+    status = napi_call_function(cookie_with_type->env, global, cookie_jsFn_arg,
+                                2, argv, &return_value);
     if (status != napi_ok) {
         napi_throw_error(
-            env, ERROR_CALLING_CB,
+            cookie_with_type->env, ERROR_CALLING_CB,
             "Error calling async event (registered with open(..)) callback.");
         return;
     }
     // Close the scope
-    napi_close_handle_scope(env, scope);
+    napi_close_handle_scope(cookie_with_type->env, scope);
 }
 
 napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
-    set_napi_env(env);
     napi_status status;
     size_t argc = 2;
     napi_value argv[2] = {0};
