@@ -42,73 +42,126 @@ export type ProductId = {
     reserved1: number,
 }
 
+/**
+ * Sensor IDs for BNO08x
+ * 
+ * Variants with documentation have getter properties added to their
+ * `SensorEvent`s. Sensor IDs are also used to designate which sensor to configure
+ * in the hub.
+ * 
+ * Variants without documentation can still be configured and SensorEvents can
+ * be received, but no convenience props are provided; Actual values must be
+ * fetched from the `Buffer` attached to the event object.
+ */
 export enum SensorId {
     SH2_RAW_ACCELEROMETER = 0x14,
+
     /**
      * Acceleration including gravity. Unit is m/s^2.
+     * 
+     * The following properties are added to `SensorEvent` from this sensor:
+     * - `x` *Acceleration along x-axis*
+     * - `y` *Acceleration along y-axis*
+     * - `z` *Acceleration along z-axis*
      */
     SH2_ACCELEROMETER = 0x01,
+
     /**
      * Acceleration without gravity. Unit is m/s^2.
+     * 
+     * The following properties are added to `SensorEvent` from this sensor:
+     * - `x` *Acceleration along x-axis*
+     * - `y` *Acceleration along y-axis*
+     * - `z` *Acceleration along z-axis*
      */
     SH2_LINEAR_ACCELERATION = 0x04,
+
     /**
      * Gravity components on sensor's coordinate frame. Unit is m/s^2.
+     * 
+     * The following properties are added to `SensorEvent` from this sensor:
+     * - `x` *G x-component*
+     * - `y` *G y-component*
+     * - `z` *G z-component*
      */
     SH2_GRAVITY = 0x06,
     SH2_RAW_GYROSCOPE = 0x15,
+
+    /**
+     * Calibrated gyroscope
+     * 
+     * The following properties are added to `SensorEvent` from this sensor:
+     * - `x` *Angular velocity around x-axis*
+     * - `y` *Angular velocity around y-axis*
+     * - `z` *Angular velocity around z-axis*
+     * 
+     * **NOTE:** Calibration functionality is not implemented, and uncalibrated
+     * variant should be used.
+     */
     SH2_GYROSCOPE_CALIBRATED = 0x02,
+
+    /**
+     * Uncalibrated gyroscope
+     * 
+     * The following properties are added to `SensorEvent` from this sensor:
+     * - `x` *Angular velocity around x-axis*
+     * - `y` *Angular velocity around y-axis*
+     * - `z` *Angular velocity around z-axis*
+     */
     SH2_GYROSCOPE_UNCALIBRATED = 0x07,
+
     /**
      * Magnetic fields on each sensor axis. Units are ADC's.
+     * 
+     * The following properties are added to `SensorEvent` from this sensor:
+     * - `x` *Angular velocity around x-axis*
+     * - `y` *Angular velocity around y-axis*
+     * - `z` *Angular velocity around z-axis*
      */
     SH2_RAW_MAGNETOMETER = 0x16,
+
     /**
      * Magnetic fields on each sensor axis. Units are uTesla.
      * See more in the SH-2 Reference Manual.
+     * 
+     * **NOTE:** Calibration functionality is not implemented, and uncalibrated
+     * variant should be used.
      */
     SH2_MAGNETIC_FIELD_CALIBRATED = 0x03,
+
     /**
      * Magnetic fields on each sensor axis. Units are uTesla.
      * See more in the SH-2 Reference Manual.
      */
     SH2_MAGNETIC_FIELD_UNCALIBRATED = 0x0f,
+
     /**
      * The rotation vector sensor reports the orientation of the device. The 
      * format of the rotation vector is a unit quaternion. Properties for easy
      * access to yaw, pitch and roll are also provided.
+     * 
+     * Below are the provided properties for `SensorEvent` having this ID.
+     * 
+     * # Quaternion
+     * - `i` ***i** part* 
+     * - `j` ***j** part*
+     * - `k` ***k** part*
+     * - `r` ***real** part*
+     * 
+     * # YPR
+     * - `yaw` ***Yaw** is the rotation about the vertical axis, turning an object left or right.*
+     * - `pitch` ***Pitch** is the rotation about the side-to-side (lateral) axis, tilting an object’s nose up or down.*
+     * - `roll` ***Roll** is the rotation about the front-to-back (longitudinal) axis, tipping an object’s wings or sides toward the ground.*
      */
     SH2_ROTATION_VECTOR = 0x05,
     SH2_GAME_ROTATION_VECTOR = 0x08,
     SH2_GEOMAGNETIC_ROTATION_VECTOR = 0x09,
-    SH2_PRESSURE = 0x0a,
-    SH2_AMBIENT_LIGHT = 0x0b,
-    SH2_HUMIDITY = 0x0c,
-    SH2_PROXIMITY = 0x0d,
-    SH2_TEMPERATURE = 0x0e,
-    SH2_RESERVED = 0x17,
-    SH2_TAP_DETECTOR = 0x10,
-    SH2_STEP_DETECTOR = 0x18,
-    SH2_STEP_COUNTER = 0x11,
     SH2_SIGNIFICANT_MOTION = 0x12,
     SH2_STABILITY_CLASSIFIER = 0x13,
-    SH2_SHAKE_DETECTOR = 0x19,
-    SH2_FLIP_DETECTOR = 0x1a,
-    SH2_PICKUP_DETECTOR = 0x1b,
-    SH2_STABILITY_DETECTOR = 0x1c,
-    SH2_PERSONAL_ACTIVITY_CLASSIFIER = 0x1e,
-    SH2_SLEEP_DETECTOR = 0x1f,
-    SH2_TILT_DETECTOR = 0x20,
-    SH2_POCKET_DETECTOR = 0x21,
-    SH2_CIRCLE_DETECTOR = 0x22,
-    SH2_HEART_RATE_MONITOR = 0x23,
     SH2_ARVR_STABILIZED_RV = 0x28,
     SH2_ARVR_STABILIZED_GRV = 0x29,
     SH2_GYRO_INTEGRATED_RV = 0x2A,
     SH2_IZRO_MOTION_REQUEST = 0x2B,
-    SH2_RAW_OPTICAL_FLOW = 0x2C,
-    SH2_DEAD_RECKONING_POSE = 0x2D,
-    SH2_WHEEL_ENCODER = 0x2E,
 
     // UPDATE to reflect greatest sensor id
     SH2_MAX_SENSOR_ID = 0x2E,
@@ -295,13 +348,13 @@ export enum WheelDatatype {
 }
 
 export enum FrsId {
-   /**
-    * Static calibration – AGM
-    */
+    /**
+     * Static calibration – AGM
+     */
     StaticAGMCalibration = 0x7979,
-   /**
-    * Nominal calibration – AGM
-    */
+    /**
+     * Nominal calibration – AGM
+     */
     NominalAGMCalibration = 0x4D4D,
     /**
     Static calibration – SRA
@@ -508,13 +561,19 @@ export type BNO08X = {
     getSensorConfig: (sensorId: SensorId) => SensorConfig,
 
     /**
-     * @brief Set sensor configuration. (e.g enable a sensor at a particular rate.)
+     * @brief Set sensor configuration.
+     * 
+     * Each sensor should have it's own configuration. The different sensors for
+     * BNO08x are enumerated at `SensorId` enum.
      *
      * @param  sensorId Which sensor to configure.
-     * @param  pConfig Pointer to structure holding sensor configuration.
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
+     * @param  conf `SensorConfig` object.
+     * 
+     * @throws ARGUMENT_ERROR
+     * @throws ERROR_CREATING_NAPI_VALUE
+     * @throws ERROR_INTERACTING_WITH_DRIVER
      */
-    setSensorConfig: (sensorId: SensorId, conf: SensorConfig) => void, // Throws on error
+    setSensorConfig: (sensorId: SensorId, conf: SensorConfig) => void,
 
     /**
      * @brief Get an FRS record.
