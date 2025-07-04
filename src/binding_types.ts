@@ -520,8 +520,15 @@ export type BNO08X = {
      * @brief Get an FRS record.
      * 
      * Retrieve stored setting.
+     * 
+     * **UNTESTED** and since there is no calibration functions yet, it is also
+     * not very useful.
      *
      * @param  recordId Which FRS Record to retrieve.
+     * 
+     * @throws ARGUMENT_ERROR
+     * @throws ERROR_CREATING_NAPI_VALUE
+     * @throws UNKNOWN_ERROR
      */
     getFrs: (recordId: FrsId) => Buffer,
 
