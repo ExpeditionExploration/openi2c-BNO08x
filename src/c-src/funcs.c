@@ -526,7 +526,11 @@ napi_value cb_devReset(napi_env env, napi_callback_info info) {
 }
 
 napi_value cb_devSleep(napi_env env, napi_callback_info info) {
-    sh2_devSleep();
+    int code = sh2_devSleep();
+    if (code != SH2_OK) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't put the hub into sleep.");
+    }
     return NULL;
 }
 

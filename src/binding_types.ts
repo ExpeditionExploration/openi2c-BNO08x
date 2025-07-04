@@ -436,9 +436,9 @@ export type BNO08X = {
     devOn: () => void,
 
     /**
-     * @brief Put sensor hub in sleep state by sending SLEEP (3) command on "device" channel.
+     * @brief Put sensor hub in sleep state.
      *
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
+     * @throws `ERROR_INTERACTING_WITH_DRIVER` on error when trying to sleep.
      */
     devSleep: () => void,
 
