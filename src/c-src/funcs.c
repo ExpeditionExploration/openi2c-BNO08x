@@ -512,8 +512,9 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
 napi_value cb_devOn(napi_env env, napi_callback_info info) {
     int code;
     if ((code = sh2_devOn()) != SH2_OK) {
-        fprintf(stderr, "devOn failed with code %d\n", code);
-        napi_throw_error(env, NULL, "Could not turn sensorhub on");
+        char msg[200];
+        snprintf(msg, 200, "Could not turn sensor hub on. code %d\n", code);
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER, msg);
     }
     return NULL;
 }

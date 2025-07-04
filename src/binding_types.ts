@@ -429,9 +429,9 @@ export type BNO08X = {
     devReset: () => void,
 
     /**
-     * @brief Turn sensor hub on by sending ON (2) command on "device" channel.
+     * @brief Turn sensor hub on.
      *
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
+     * @throws `ERROR_INTERACTING_WITH_DRIVER` on error on enabling the hub.
      */
     devOn: () => void,
 
