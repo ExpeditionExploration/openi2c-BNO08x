@@ -141,24 +141,48 @@ napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {
 }
 
 napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
-    napi_value obj;
+    napi_value result;
     napi_status status;
-    status = napi_create_object(env, &obj);
+    status = napi_create_object(env, &result);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+            "Couldn't create JS Object for storing sh2_SensorConfigResp_t");
+        return NULL;
+    }
 
     napi_value sensorId;
     napi_value config;
 
-    status |= napi_create_uint32(env, cfg->sensorId, &sensorId);
+    // Sensor id this config is for.
+    status = napi_create_uint32(env, cfg->sensorId, &sensorId);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create JS Object for sensorId");
+        return NULL;
+    }
+
+    // Config
     config = c_to_SensorConfig(env, &cfg->sensorConfig);
-    if (config == NULL) { return NULL; }
-    status |= napi_set_named_property(env, obj, "sensorId", sensorId);
-    status |= napi_set_named_property(env, obj, "config", config);
+    if (config == NULL) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create a JS Object from sh2_SensorConfig_t "
+                         "in sh2_SensorConfigResp_t");
+        return NULL;
+    }
+    status = napi_set_named_property(env, result, "sensorId", sensorId);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Error setting property with name `sensorId`");
+        return NULL;
+    }
+    status = napi_set_named_property(env, result, "sensorConfig", config);
     if (status != napi_ok) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
                          "couldn't construct SensorConfigResp");
         return NULL;
     }
-    return obj;
+    return result;
 }
 
 napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
