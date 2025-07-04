@@ -219,16 +219,32 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
 
     // Translate sensor event to napi_value
     napi_value sensor_event = c_to_SensorEvent(env, event);
-    if (sensor_event == NULL) { return; }
+    if (sensor_event == NULL) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Error translating SensorEvent to JS object.");
+        return;
+    }
 
     // Cast the cookie and prepare the arguments
     // to call the JS function
     cb_cookie_t *c = (cb_cookie_t *)cookie;
     napi_value fetched_js_cookie;
     napi_value fetched_js_fn;
-    napi_get_reference_value(env, c->cookie_ref, &fetched_js_cookie);
-    napi_get_reference_value(env, c->jsFn_ref, &fetched_js_fn);
-    napi_value argv[2] = {fetched_js_cookie, sensor_event};
+    status = napi_get_reference_value(env, c->cookie_ref, &fetched_js_cookie);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, REF_ERROR,
+            "Unable to fetch value by reference in sensor_callback.");
+        return;
+    }
+    status = napi_get_reference_value(env, c->jsFn_ref, &fetched_js_fn);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, REF_ERROR,
+            "Unable to fetch value by reference in sensor_callback.");
+        return;
+    }
+    napi_value argv[2] = {sensor_event, fetched_js_cookie};
 
     // Call the callback function with the sensor data
     napi_value global;
@@ -258,10 +274,17 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     napi_value argv[2] = {0};
     size_t argc = 2;
 
+    napi_valuetype argt;
     bool success = parse_args(env, info, &argc, argv, NULL, NULL, 2, 2);
     if (!success) {
         napi_throw_error(env, ARGUMENT_ERROR,
                          "Couldn't parse arguments in cb_setSensorCallback");
+        return NULL;
+    }
+    napi_typeof(env, argv[0], &argt);
+    if (argt != napi_function) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "First argument must be a function.");
         return NULL;
     }
 
@@ -283,14 +306,28 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     }
 
     cookie->env = env;
-    napi_create_reference(env, argv[0], 1, &cookie->jsFn_ref);
-    napi_create_reference(env, argv[1], 1, &cookie->cookie_ref);
+    napi_status status =
+        napi_create_reference(env, argv[0], 1, &cookie->jsFn_ref);
+    if (status != napi_ok) {
+        napi_throw_error(env, REF_ERROR,
+                         "Couldn't create a napi ref for callback value in "
+                         "setSensorCallback.");
+    }
+    status = napi_create_reference(env, argv[1], 1, &cookie->cookie_ref);
+    if (status != napi_ok) {
+        napi_throw_error(env, REF_ERROR,
+                         "Couldn't create a napi ref for cookie value in "
+                         "setSensorCallback.");
+    }
     _sensor_callback = cookie;
 
-    int8_t ret_code;
-    if ((ret_code = sh2_setSensorCallback(sensor_callback, _sensor_callback)) <
-        0) {
-        printf("Setting a new callback failed with code: %hhd\n", ret_code);
+    int8_t code = sh2_setSensorCallback(sensor_callback, _sensor_callback);
+    if (code != SH2_OK) {
+        char msg[200];
+        snprintf(msg, 200, "Setting a new callback failed with code: %hhd\n",
+                 code);
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER, msg);
+        return NULL;
     }
 
     return NULL;

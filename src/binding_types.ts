@@ -29,7 +29,7 @@ export type SensorEvent = {
     roll?: number,
 }
 
-export type SensorCallback = (cookie: any, event: SensorEvent) => void;
+export type SensorCallback = (event: SensorEvent, cookie: any) => void;
 
 /**
  * Sensor IDs for BNO08x
@@ -421,13 +421,19 @@ export type BNO08X = {
     service: () => void,
 
     /**
-     * @brief Register a function to receive sensor events.
+     * @brief Register a function to be called on received sensor events.
      *
-     * @param  callback A function that will be called each time a sensor event is received.
-     * @param  cookie  A value that will be passed to the sensor callback function.
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
+     * @param  callback For sensor events.
+     * @param  cookie  Will be passed for the callback.
+     * 
+     * @throws `ARGUMENT_ERROR` On invalid argument.
+     * @throws `ERROR_CREATING_NAPI_VALUE` On Out-Of-Memory.
+     * @throws `REF_ERROR` On being unable to create a napi reference to cb.
+     * @throws `REF_ERROR` On being unable to create a napi reference to cookie.
+     * @throws `ERROR_INTERACTING_WITH_DRIVER` On being unable set new cb.
+     * 
      */
-    setSensorCallback: (callback: SensorCallback, cookie: any) => void,  // Throws on error
+    setSensorCallback: (callback: SensorCallback, cookie: Object) => void,
 
     /**
      * @brief Reset the sensor hub.

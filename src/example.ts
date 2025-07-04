@@ -6,9 +6,9 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function main(): Promise<void> {
     // Set bus number and device address
     bindings.setI2CConfig(1, 0x4b)
-    bindings.open((cookie, ev) => { /*console.log(ev);*/ }, { foo: 'lala' })
+    bindings.open((cookie, ev) => { console.log(ev) }, { foo: 'lala' })
     bindings.setSensorCallback(
-        (cookie, ev) => {
+        (ev, cookie) => {
             if (ev.reportId == SensorId.SH2_ACCELEROMETER) {
                 console.log(`ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             } else if (ev.reportId == SensorId.SH2_LINEAR_ACCELERATION) {
