@@ -1,4 +1,4 @@
-import { SensorConfig } from '../binding_types';
+import { SensorConfig, SensorConfigResponse, SensorId } from '../binding_types';
 import { tests } from './test_loader';
 
 test('Converting SensorConfig from JavaScript object to C struct', () => {
@@ -26,4 +26,18 @@ test('Converting SensorConfig from C struct to JavaScript object', () => {
   expect(testObject.reportInterval_us).toBe(12345)
   expect(testObject.sniffEnabled).toBe(true)
   expect(testObject.wakeupEnabled).toBe(true)
+})
+
+test('Converting SensorConfigResp from C struct to JavaScript object', () => {
+  const testObject: SensorConfigResponse = tests.test_c_to_SensorConfigResp()
+
+  expect(testObject.sensorId).toBe(SensorId.SH2_ACCELEROMETER)
+  expect(testObject.sensorConfig.alwaysOnEnabled).toBe(true)
+  expect(testObject.sensorConfig.batchInterval_us).toBe(12345)
+  expect(testObject.sensorConfig.changeSensitivity).toBe(12345)
+  expect(testObject.sensorConfig.changeSensitivityEnabled).toBe(true)
+  expect(testObject.sensorConfig.changeSensitivityRelative).toBe(true)
+  expect(testObject.sensorConfig.reportInterval_us).toBe(12345)
+  expect(testObject.sensorConfig.sniffEnabled).toBe(true)
+  expect(testObject.sensorConfig.wakeupEnabled).toBe(true)
 })

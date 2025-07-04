@@ -100,3 +100,21 @@ napi_value test_c_to_SensorConfig(napi_env env, napi_callback_info info) {
     napi_value result = c_to_SensorConfig(env, &test_config);
     return result; // Assert in TypeScript since it's way less wordy.
 }
+
+napi_value test_c_to_SensorConfigResp(napi_env env, napi_callback_info info) {
+    sh2_SensorConfigResp_t test_cfg = {
+        .sensorConfig = {
+            .alwaysOnEnabled = true,
+            .changeSensitivityEnabled = true,
+            .changeSensitivityRelative = true,
+            .sniffEnabled = true,
+            .wakeupEnabled = true,
+            .reportInterval_us = 12345,
+            .batchInterval_us = 12345,
+            .changeSensitivity = 12345,
+        },
+        .sensorId = SH2_ACCELEROMETER
+    };
+    napi_value result = c_to_SensorConfigResp(env, &test_cfg);
+    return result; // Assert in TypeScript.
+}

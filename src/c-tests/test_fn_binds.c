@@ -27,6 +27,8 @@ napi_value init(napi_env env, napi_value exports) {
                 test_from_SensorConfig_to_c, NULL);
     register_fn(env, exports, "test_c_to_SensorConfig", test_c_to_SensorConfig,
                 NULL);
+    register_fn(env, exports, "test_c_to_SensorConfigResp",
+                test_c_to_SensorConfigResp, NULL);
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)
