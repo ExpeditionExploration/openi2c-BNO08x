@@ -521,7 +521,8 @@ napi_value cb_devOn(napi_env env, napi_callback_info info) {
 
 napi_value cb_devReset(napi_env env, napi_callback_info info) {
     if (sh2_devReset() != SH2_OK) {
-        napi_throw_error(env, NULL, "Could not reset the sensor");
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Could not reset the sensor hub.");
     };
     return NULL;
 }

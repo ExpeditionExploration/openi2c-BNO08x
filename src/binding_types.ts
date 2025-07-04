@@ -422,9 +422,9 @@ export type BNO08X = {
     setSensorCallback: (callback: SensorCallback, cookie: any) => void,  // Throws on error
 
     /**
-     * @brief Reset the sensor hub device by sending RESET (1) command on "device" channel.
+     * @brief Reset the sensor hub.
      *
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
+     * @throws `ERROR_INTERACTING_WITH_DRIVER` on error on resetting the hub.
      */
     devReset: () => void,
 
