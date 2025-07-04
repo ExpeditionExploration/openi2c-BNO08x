@@ -407,10 +407,16 @@ export type BNO08X = {
     close: () => void,
 
     /**
-     * @brief Service the SH2 device, reading any data that is available and dispatching callbacks.
+     * @brief Service the SH2 device, reading any data that is available and
+     * dispatching callbacks.
      *
-     * This function should be called periodically by the host system to service an open sensor hub.
+     * This function should be called periodically by the host system to service
+     * an open sensor hub.
      *
+     * @throws Anything event callbacks might throw.
+     * @throws `REF_ERROR` On being unable to fetch value by napi reference.
+     * @throws `ERROR_CREATING_NAPI_VALUE` On being unable to fetch JS global
+     * object.
      */
     service: () => void,
 

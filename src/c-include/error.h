@@ -1,5 +1,5 @@
 
-extern const char* ERROR_OPENING_DEVICE; 
+extern const char* ERROR_OPENING_DEVICE;
 extern const char* ERROR_WRITING_TO_SLAVE;
 extern const char* ERROR_ACQUIRING_SLAVE;
 extern const char* ERROR_READING_FULL_BUFFER;
@@ -16,3 +16,5 @@ extern const char* SENSOR_REPORT_ERROR;
 
 extern const char* ERROR_EXECUTING_TEST;
 extern const char* ASSERT_ERROR;
+extern const char* ERROR_CALLING_CB;
+extern const char* ERROR_OPENING_SCOPE;

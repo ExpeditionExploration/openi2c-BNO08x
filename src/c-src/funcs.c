@@ -316,6 +316,10 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     // reference.
     napi_handle_scope scope;
     status = napi_open_handle_scope(env, &scope);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_OPENING_SCOPE, "Couldn't open napi scope.");
+        return;
+    }
     napi_value cookie_cookie_arg;
     napi_value cookie_jsFn_arg;
     status |= napi_get_reference_value(env, cookie_with_type->cookie_ref,
@@ -323,8 +327,7 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     status |= napi_get_reference_value(env, cookie_with_type->jsFn_ref,
                                        &cookie_jsFn_arg);
     if (status != napi_ok) {
-        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
-                         "Could't get napi value by reference");
+        napi_throw_error(env, REF_ERROR, "Could't get napi value by reference");
         return;
     }
 
@@ -335,14 +338,19 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     // Call the callback function with the sensor data
     napi_value global;
     status = napi_get_global(env, &global);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+                         "Couldn't get global object.");
+        return;
+    }
 
-    // The call below fails due to jsFn changing type
-    status |= napi_call_function(env, global, cookie_jsFn_arg, 2, argv,
-                                 &return_value);
+    status = napi_call_function(env, global, cookie_jsFn_arg, 2, argv,
+                                &return_value);
     if (status != napi_ok) {
         napi_throw_error(
-            env, ERROR_CREATING_NAPI_VALUE,
-            "Sensor event happened but couldn't construct a napi value for it");
+            env, ERROR_CALLING_CB,
+            "Error calling async event (registered with open(..)) callback.");
+        return;
     }
     // Close the scope
     napi_close_handle_scope(env, scope);
