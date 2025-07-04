@@ -31,17 +31,6 @@ export type SensorEvent = {
 
 export type SensorCallback = (cookie: any, event: SensorEvent) => void;
 
-export type ProductId = {
-    resetCause: number,
-    swVersionMajor: number,
-    swVersionMinor: number,
-    swPartNumber: number,
-    swBuildNumber: number,
-    swVersionPatch: number,
-    reserved0: number,
-    reserved1: number,
-}
-
 /**
  * Sensor IDs for BNO08x
  * 
@@ -201,102 +190,6 @@ export type SensorConfig = {
     sensorSpecific?: Buffer,
 }
 
-export type SensorMetadata = {
-    meVersion: number,   /**< @brief Motion Engine Version */
-    mhVersion: number,  /**< @brief Motion Hub Version */
-    shVersion: number,  /**< @brief SensorHub Version */
-    range: number,  /**< @brief Same units as sensor reports */
-    resolution: number,  /**< @brief Same units as sensor reports */
-    revision: number,  /**< @brief Metadata record format revision */
-    power_mA: number,    /**< @brief [mA] Fixed point 16Q10 format */
-    minPeriod_uS: number,  /**< @brief [uS] */
-    maxPeriod_uS: number,  /**< @brief [uS] */
-    fifoReserved: number,  /**< @brief (Unused) */
-    fifoMax: number,  /**< @brief (Unused) */
-    batchBufferBytes: number,  /**< @brief (Unused) */
-    qPoint1: number,     /**< @brief q point for sensor values */
-    qPoint2: number,     /**< @brief q point for accuracy or bias fields */
-    qPoint3: number,     /**< @brief q point for sensor data change sensitivity */
-    vendorIdLen: number, /**< @brief [bytes] */
-    vendorId: string;  /**< @brief Vendor name and part number */
-    sensorSpecificLen: number,  /**< @brief [bytes] */
-    sensorSpecific: Buffer;  /**< @brief See SH-2 Reference Manual */
-}
-
-export type ErrorRecord = {
-    severity: number,   /**< @brief Error severity, 0: most severe. */
-    sequence: number,   /**< @brief Sequence number (by severity) */
-    source: number,     /**< @brief 1-MotionEngine, 2-MotionHub, 3-SensorHub, 4-Chip  */
-    error: number,      /**< @brief See SH-2 Reference Manual */
-    module: number,     /**< @brief See SH-2 Reference Manual */
-    code: number,       /**< @brief See SH-2 Reference Manual */
-}
-
-export type Counts = {
-    offered: number,   /**< @brief [events] */
-    accepted: number,  /**< @brief [events] */
-    on: number,        /**< @brief [events] */
-    attempted: number, /**< @brief [events] */
-}
-
-export type TareBasis = {
-    SH2_TARE_BASIS_ROTATION_VECTOR: number,             /**< @brief Use Rotation Vector */
-    SH2_TARE_BASIS_GAMING_ROTATION_VECTOR: number,      /**< @brief Use Game Rotation Vector */
-    SH2_TARE_BASIS_GEOMAGNETIC_ROTATION_VECTOR: number, /**< @brief Use Geomagnetic R.V. */
-}
-
-export type TareAxis = {
-    SH2_TARE_X: number,  /**< @brief sh2_tareNow() axes bit field */
-    SH2_TARE_Y: number,  /**< @brief sh2_tareNow() axes bit field */
-    SH2_TARE_Z: number,  /**< @brief sh2_tareNow() axes bit field */
-    SH2_TARE_CONTROL_VECTOR_X: number,         /**< @brief Use X axis of source and frame to perform tare */
-    SH2_TARE_CONTROL_VECTOR_Y: number,         /**< @brief Use Y axis of source and frame to perform tare */
-    SH2_TARE_CONTROL_VECTOR_Z: number,         /**< @brief Use Z axis of source and frame to perform tare */
-    SH2_TARE_CONTROL_SEQUENCE_DEFAULT: number, /**< @brief Tare "typical" toration for source/axis combination */
-    SH2_TARE_CONTROL_SEQUENCE_PRE: number,     /**< @brief Apply to pre-rotation (tare world to device) */
-    SH2_TARE_CONTROL_SEQUENCE_POST: number,    /**< @brief Apply to post-rotation (tare device to world) */
-}
-
-export type Quaternion = {
-    x: number,
-    y: number,
-    z: number,
-    w: number,
-};
-
-export enum OscillatorType {
-    SH2_OSC_INTERNAL = 0,
-    SH2_OSC_EXT_CRYSTAL = 1,
-    SH2_OSC_EXT_CLOCK = 2,
-};
-
-export enum CalibrationStatus {
-    SH2_CAL_SUCCESS = 0,
-    SH2_CAL_NO_ZRO,
-    SH2_CAL_NO_STATIONARY_DETECTION,
-    SH2_CAL_ROTATION_OUTSIDE_SPEC,
-    SH2_CAL_ZRO_OUTSIDE_SPEC,
-    SH2_CAL_ZGO_OUTSIDE_SPEC,
-    SH2_CAL_GYRO_GAIN_OUTSIDE_SPEC,
-    SH2_CAL_GYRO_PERIOD_OUTSIDE_SPEC,
-    SH2_CAL_GYRO_DROPS_OUTSIDE_SPEC,
-};
-
-export enum InteractiveZROMotionIntent {
-    SH2_IZRO_MI_UNKNOWN = 0,
-    SH2_IZRO_MI_STATIONARY_NO_VIBRATION,
-    SH2_IZRO_MI_STATIONARY_WITH_VIBRATION,
-    SH2_IZRO_MI_IN_MOTION,
-    SH2_IZRO_MI_ACCELERATING,
-};
-
-export enum InteractiveZROMotionRequest {
-    NO_REQUEST = 0,
-    STAY_STATIONARY,
-    STATIONARY_NON_URGENT,
-    STATIONARY_URGENT,
-}
-
 export enum AsyncEventId {
     RESET,
     SHTP_EVENT,
@@ -310,6 +203,9 @@ export enum ShtpEvent {
     BAD_RX_CHAN = 3,
     BAD_TX_CHAN = 4,
     BAD_FRAGMENT = 5,
+    /**
+     * Bad sequence number
+     */
     BAD_SN = 6,
     INTERRUPTED_PAYLOAD = 7,
 };
@@ -321,32 +217,28 @@ export type SensorConfigResponse = {
 
 /// Only shtpEvent or SensorConfigResponse is defined at a time.
 export type AsyncEvent = {
-    eventId: number;
+    eventId: AsyncEventId;
+
+    /**
+     * Either this or `.sh2SensorConfigResp` will be populated, but not both.
+     */
     shtpEvent: ShtpEvent | undefined;
-    SensorConfigResponse: SensorConfigResponse | undefined;
+
+    /**
+     * Either this or `.shtpEvent`
+     */
+    sh2SensorConfigResp: SensorConfigResponse | undefined;
 }
 
-export type EventCallback = (cookie: any, event: AsyncEvent) => void;
+export type EventCallback = (cookie: Object, event: AsyncEvent) => void;
 
-export enum Sensors {
-    CAL_ACCEL,
-    CAL_GYRO,
-    CAL_MAG,
-    CAL_PLANAR,
-    CAL_ON_TABLE,
-    CAL_ZERO_GYRO_CONTROL_MASK,
-    CAL_ZERO_GYRO_CONTROL_ON_TABLE_DETECT,
-    CAL_ZERO_GYRO_CONTROL_NEVER,
-    CAL_ZERO_GYRO_CONTROL_ON_TABLE_CLASS,
-    CAL_ZERO_GYRO_CONTROL_ON_TABLE_CLASS_OR_LONG_TERM_STABLE
-}
-export type SensorSet = Sensors;
-
-export enum WheelDatatype {
-    Position = 0,
-    Velocity = 1,
-}
-
+/**
+ * `FrsId` to set or get.
+ * 
+ * **NOTE:** This enum isn't very useful now, since no calibration functionality
+ * is implemented yet. I chose to keep this here regardless, since the functions
+ * to set and get FRS *are* implemented. In short, disregard this enum for now.
+ */
 export enum FrsId {
     /**
      * Static calibration – AGM

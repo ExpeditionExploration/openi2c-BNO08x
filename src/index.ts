@@ -1,21 +1,15 @@
 
 const binding = require('bindings')
 import {
-    type
-        SensorEvent, SensorCallback, ProductId, SensorId,
-    SensorConfig, SensorMetadata, ErrorRecord, Counts,
-    TareBasis, TareAxis, Quaternion, CalibrationStatus,
-    InteractiveZROMotionIntent, InteractiveZROMotionRequest,
+    type SensorEvent, SensorCallback, SensorId, SensorConfig,
     AsyncEventId, AsyncEvent, ShtpEvent, SensorConfigResponse,
-    EventCallback, Sensors, SensorSet, WheelDatatype, BNO08X
+    EventCallback, BNO08X
 } from "./binding_types"
 
 export const bindings: BNO08X = binding('bno08x_native')
 export {
-    SensorEvent, SensorCallback, ProductId, SensorId,
-    SensorConfig, SensorMetadata, ErrorRecord, Counts,
-    TareBasis, TareAxis, Quaternion, CalibrationStatus,
-    InteractiveZROMotionIntent, InteractiveZROMotionRequest,
-    AsyncEventId, AsyncEvent, ShtpEvent, SensorConfigResponse,
-    EventCallback, Sensors, SensorSet, WheelDatatype, BNO08X
+    SensorEvent, SensorCallback, SensorId,
+    SensorConfig, AsyncEventId, AsyncEvent,
+    ShtpEvent, SensorConfigResponse, EventCallback,
+    BNO08X
 }
