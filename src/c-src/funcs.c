@@ -217,6 +217,13 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
     napi_env env = ((cb_cookie_t *)(cookie))->env;
     napi_status status;
 
+    uv_thread_t this_thread = uv_thread_self();
+    if (!uv_thread_equal(&this_thread, &((cb_cookie_t *)cookie)->thread)) {
+        char *msg = "Not in NodeJS main thread. Can't invoke sensor callback.";
+        napi_throw_error(env, THREADING_ERROR, msg);
+        return;
+    }
+
     // Translate sensor event to napi_value
     napi_value sensor_event = c_to_SensorEvent(env, event);
     if (sensor_event == NULL) {
@@ -306,6 +313,7 @@ napi_value cb_setSensorCallback(napi_env env, napi_callback_info info) {
     }
 
     cookie->env = env;
+    cookie->thread = uv_thread_self();
     napi_status status =
         napi_create_reference(env, argv[0], 1, &cookie->jsFn_ref);
     if (status != napi_ok) {
@@ -340,13 +348,18 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     napi_value return_value;
     uv_thread_t this_thread = uv_thread_self();
     if (!uv_thread_equal(&this_thread, &cookie_with_type->thread)) {
-        fprintf(stderr, "Not in NodeJS main thread. Aborting.\n");
-        exit(1);
+        char *msg = "Not in NodeJS main thread.";
+        napi_throw_error(env, THREADING_ERROR, msg);
+        return;
     }
 
     // Translate sensor event to napi_value
     napi_value async_event = c_to_AsyncEvent(env, event);
-    if (async_event == NULL) { return; }
+    if (async_event == NULL) {
+        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+                         "Error converting sh2_AsyncEvent_t to JS object.");
+        return;
+    }
 
     // Since this is a callback, and the extension exits to node entirely
     // between cb_service()-calls, the handles need to be fetched again by
@@ -359,18 +372,26 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     }
     napi_value cookie_cookie_arg;
     napi_value cookie_jsFn_arg;
-    status |= napi_get_reference_value(env, cookie_with_type->cookie_ref,
-                                       &cookie_cookie_arg);
-    status |= napi_get_reference_value(env, cookie_with_type->jsFn_ref,
-                                       &cookie_jsFn_arg);
+    status = napi_get_reference_value(env, cookie_with_type->cookie_ref,
+                                      &cookie_cookie_arg);
     if (status != napi_ok) {
-        napi_throw_error(env, REF_ERROR, "Could't get napi value by reference");
+        napi_throw_error(
+            env, REF_ERROR,
+            "Error getting value by reference in async_event_callback_broker");
+        return;
+    }
+    status = napi_get_reference_value(env, cookie_with_type->jsFn_ref,
+                                      &cookie_jsFn_arg);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, REF_ERROR,
+            "Error getting value by reference in async_event_callback_broker");
         return;
     }
 
     // Cast the cookie and prepare the arguments
     // to call the JS function
-    napi_value argv[2] = {cookie_cookie_arg, async_event};
+    napi_value argv[2] = {async_event, cookie_cookie_arg};
 
     // Call the callback function with the sensor data
     napi_value global;

@@ -417,6 +417,8 @@ export type BNO08X = {
      * @throws `REF_ERROR` On being unable to fetch value by napi reference.
      * @throws `ERROR_CREATING_NAPI_VALUE` On being unable to fetch JS global
      * object.
+     * @throws `THREADING_ERROR` On a callback being invoked from a Node.js
+     * thread other than the main thread.
      */
     service: () => void,
 
