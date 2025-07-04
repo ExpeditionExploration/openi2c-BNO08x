@@ -85,3 +85,18 @@ napi_value test_from_SensorConfig_to_c(napi_env env, napi_callback_info info) {
 
     return NULL;
 }
+
+napi_value test_c_to_SensorConfig(napi_env env, napi_callback_info info) {
+    sh2_SensorConfig_t test_config = {
+        .alwaysOnEnabled = true,
+        .changeSensitivityEnabled = true,
+        .changeSensitivityRelative = true,
+        .sniffEnabled = true,
+        .wakeupEnabled = true,
+        .reportInterval_us = 12345,
+        .batchInterval_us = 12345,
+        .changeSensitivity = 12345,
+    };
+    napi_value result = c_to_SensorConfig(env, &test_config);
+    return result; // Assert in TypeScript since it's way less wordy.
+}

@@ -25,6 +25,8 @@ static uint8_t register_fn(napi_env env, napi_value exports, const char* name,
 napi_value init(napi_env env, napi_value exports) {
     register_fn(env, exports, "test_from_SensorConfig_to_c",
                 test_from_SensorConfig_to_c, NULL);
+    register_fn(env, exports, "test_c_to_SensorConfig", test_c_to_SensorConfig,
+                NULL);
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)

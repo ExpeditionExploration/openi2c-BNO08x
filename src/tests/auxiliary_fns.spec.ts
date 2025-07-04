@@ -14,3 +14,16 @@ test('Converting SensorConfig from JavaScript object to C struct', () => {
   }
   expect(() => tests.test_from_SensorConfig_to_c(cfg)).not.toThrow();
 });
+
+test('Converting SensorConfig from C struct to JavaScript object', () => {
+  const testObject: SensorConfig = tests.test_c_to_SensorConfig()
+
+  expect(testObject.alwaysOnEnabled).toBe(true)
+  expect(testObject.batchInterval_us).toBe(12345)
+  expect(testObject.changeSensitivity).toBe(12345)
+  expect(testObject.changeSensitivityEnabled).toBe(true)
+  expect(testObject.changeSensitivityRelative).toBe(true)
+  expect(testObject.reportInterval_us).toBe(12345)
+  expect(testObject.sniffEnabled).toBe(true)
+  expect(testObject.wakeupEnabled).toBe(true)
+})
