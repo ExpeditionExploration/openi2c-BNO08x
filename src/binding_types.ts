@@ -528,7 +528,10 @@ export type BNO08X = {
     /**
      * @brief Set an FRS record
      * 
-     * If it doesn't throw anything, writing the designated setting was success.
+     * Throws on error.
+     * 
+     * **UNTESTED** and since there is no calibration functions yet, it is also
+     * not very useful.
      *
      * @param  recordId Which FRS Record to set.
      * @param  fsrData Buffer containing data to be written.
