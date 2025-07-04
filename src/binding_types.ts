@@ -382,18 +382,20 @@ export type BNO08X = {
      * @brief Open a session with a sensor hub.
      *
      * This function should be called before others in this API.
-     * An instance of an SH2 HAL should be passed in.
-     * This call will result in the open() function of the HAL being called.
      *
-     * As part of the initialization process, a callback function is registered that will
-     * be invoked when the device generates certain events.  (See sh2_AsyncEventId)
+     * As part of the initialization process, a callback function is registered
+     * that will be invoked when the device generates certain events.
+     * (See `AsyncEventId`)
      *
-     * @param pHal Pointer to an SH2 HAL instance, provided by the target system.
-     * @param  eventCallback Will be called when events, such as reset complete, occur.
-     * @param  eventCookie Will be passed to eventCallback.
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
+     * @param callback is called on events other than sensor events.
+     * @param  eventCookie Will be passed to callback. It must be an `Object`,
+     * so primitives are a no go. It can be a function, object, array, etc.
+     * 
+     * @throws `ARGUMENT_ERROR` on invalid arguments.
+     * @throws `REF_ERROR` on invalid value to create reference from.
+     * @throws `ERROR_INTERACTING_WITH_DRIVER` on failed sh2_open(..).
      */
-    open: (callback: EventCallback, eventCookie: any) => void,
+    open: (callback: EventCallback, eventCookie: Object) => void,
 
     /**
      * @brief Close a session with a sensor hub.

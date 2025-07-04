@@ -390,12 +390,18 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     status =
         napi_create_reference(env, jsFn, 1, &_async_event_callback->jsFn_ref);
     if (status != napi_ok) {
-        napi_throw_error(env, NULL, "Couldn't create ref\n");
+        napi_throw_error(env, REF_ERROR,
+                         "Couldn't create reference. Was JavaScript function "
+                         "provided as a callback?\n");
+        return NULL;
     }
     status = napi_create_reference(env, jsCookie, 1,
                                    &_async_event_callback->cookie_ref);
     if (status != napi_ok) {
-        napi_throw_error(env, NULL, "Couldn't create ref\n");
+        napi_throw_error(env, REF_ERROR,
+                         "Couldn't create reference. Was JavaScript Object "
+                         "provided as a cookie?\n");
+        return NULL;
     }
 
     // Prepare the HAL struct
@@ -403,13 +409,11 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
     hal = make_hal();
 
     // Open connection
-    printf("env: %p, cb_sh2_open(napi_env env, napi_callback_info info)\n",
-           (void *)env);
     int status_ =
         sh2_open(&hal, async_event_callback_broker, _async_event_callback);
-    if (status_ != 0) {
+    if (status_ != SH2_OK) {
         napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
-                         "Couldn't open the sh2 device");
+                         "Couldn't open the sh2 device.");
     }
 
     return NULL;
