@@ -25,7 +25,9 @@ static i2c_settings_t CURRENT_I2C_SETTINGS;
 // It should put the device in reset then de-initialize any
 // peripherals or hardware resources that were used.
 void close_i2c(sh2_Hal_t* self) {
-    while (sh2_devReset());
+    if (sh2_devReset() < 0) {
+        fprintf(stderr, "Sensor hub couldn't be reset on close\n");
+    }
     if (CURRENT_I2C_SETTINGS.i2c_fd > 0) {
         // Close the I2C device file.
         fprintf(stderr, "Closing I2C device: %d\n",
