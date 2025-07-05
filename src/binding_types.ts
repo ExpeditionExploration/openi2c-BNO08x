@@ -459,16 +459,6 @@ export type BNO08X = {
      */
     devSleep: () => void,
 
-
-    /**
-     * @brief Get sensor configuration.
-     *
-     * @param  sensorId Which sensor to query.
-     * @param  config SensorConfig structure to store results.
-     * @return SH2_OK (0), on success.  Negative value from sh2_err.h on error.
-     */
-    getSensorConfig: (sensorId: SensorId) => SensorConfig,
-
     /**
      * @brief Set sensor configuration.
      * 
