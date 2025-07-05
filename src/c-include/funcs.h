@@ -3,7 +3,7 @@
 
 #include <node/node_api.h>
 
-napi_env get_napi_env(void);
+extern napi_env _global_env_dont_touch;
 napi_value cb_setI2CSettings(napi_env env, napi_callback_info info);
 napi_value cb_getI2CSettings(napi_env env, napi_callback_info _);
 napi_value cb_sh2_open(napi_env env, napi_callback_info info);

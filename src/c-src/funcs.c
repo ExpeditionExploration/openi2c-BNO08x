@@ -397,7 +397,16 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     napi_close_handle_scope(cookie_with_type->env, scope);
 }
 
+// Ha. Ha. Second source of truth exclusively for HAL read_i2c(..).
+// Raspberry Pi 4B and older have a i2c clock stretching bug which bugs
+// the connection to the sensor. This is for being able to throw node.js error
+// to let user know what is wrong and make them use sw i2c or keep re-opening
+// sensor hub connection.
+napi_env _global_env_dont_touch;
 napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
+    // Assign the ugly _globa_env
+    _global_env_dont_touch = env;
+
     napi_status status;
     size_t argc = 2;
     napi_value argv[2] = {0};

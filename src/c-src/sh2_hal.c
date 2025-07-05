@@ -1,10 +1,12 @@
 #include "sh2/sh2_hal.h"
 
 #include <endian.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
+#include <node/node_api.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -15,6 +17,7 @@
 #include <unistd.h>
 
 #include "error.h"
+#include "funcs.h"
 #include "sh2/sh2.h"
 #include "sh2/sh2_err.h"
 #include "sh2_hal_supplement.h"
@@ -116,8 +119,17 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
         length = *(u_int16_t*)pBuffer;
         length &= 0x7fff;
         length = le16toh(length);
-        if (n < 0) {
-            perror("read_from_i2c");
+        if (n < 0 && errno == EIO) {
+            perror("read_from_i2c(..)");
+            // Fetch napi_env for the main thread.
+            napi_throw_error(
+                _global_env_dont_touch, I2C_ERROR,
+                "Are you perhaps on Raspberry Pi 4B or older and are using "
+                "hardware I2C? See OpenI2C root repository's README.md "
+                "about clock stretching on this platform.");
+            return 0;
+        } else if (n < 0) {
+            perror("read_from_i2c(..)");
             return 0;
         }
         if (length == 0) { return 0; }

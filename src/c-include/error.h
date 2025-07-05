@@ -19,3 +19,5 @@ extern const char* ASSERT_ERROR;
 extern const char* ERROR_CALLING_CB;
 extern const char* ERROR_OPENING_SCOPE;
 extern const char* THREADING_ERROR;
+
+extern const char* I2C_ERROR;
