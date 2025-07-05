@@ -1,7 +1,6 @@
 #include "sh2/sh2_hal.h"
 
 #include <endian.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <linux/i2c-dev.h>
@@ -10,14 +9,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "error.h"
+#include "sh2/sh2.h"
+#include "sh2/sh2_err.h"
 #include "sh2_hal_supplement.h"
 
 static i2c_settings_t CURRENT_I2C_SETTINGS;
@@ -26,6 +25,7 @@ static i2c_settings_t CURRENT_I2C_SETTINGS;
 // It should put the device in reset then de-initialize any
 // peripherals or hardware resources that were used.
 void close_i2c(sh2_Hal_t* self) {
+    while (sh2_devReset());
     if (CURRENT_I2C_SETTINGS.i2c_fd > 0) {
         // Close the I2C device file.
         fprintf(stderr, "Closing I2C device: %d\n",
@@ -56,7 +56,7 @@ int open_i2c(sh2_Hal_t* self) {
         perror("Failed to open i2c bus");
         return 1;
     }
-    fprintf(stderr, "Opened I2C device: %s\n", dev);
+    fprintf(stdout, "Opened I2C device: %s\n", dev);
     // Set the I2C slave address.
     if (ioctl(CURRENT_I2C_SETTINGS.i2c_fd, I2C_SLAVE,
               CURRENT_I2C_SETTINGS.addr) < 0) {
@@ -65,8 +65,26 @@ int open_i2c(sh2_Hal_t* self) {
         CURRENT_I2C_SETTINGS.i2c_fd = -1; // Reset to invalid state
         return 1;
     }
-    fprintf(stderr, "Set I2C slave address: 0x%02X\n",
+    fprintf(stdout, "Set I2C slave address: 0x%02X\n",
             CURRENT_I2C_SETTINGS.addr);
+
+    uint8_t reset_msg[5] = {
+        0x05, 0x00, // Length = 5 bytes total
+        0x01,       // Channel = 1 (executable)
+        0x00,       // Sequence number = 0
+        0x01        // Payload = 1 (“reset”)
+    };
+    ssize_t n = write(CURRENT_I2C_SETTINGS.i2c_fd, reset_msg, 5);
+    if (n != 5) {
+        char msg[200];
+        snprintf(msg, 200, "Reset msg sent, %ldB was sent instead of 5B\n", n);
+        fprintf(stderr, msg);
+        return SH2_ERR;
+    } else {
+        fprintf(stdout, "Reset sent to sensor hub.\n");
+        sleep(1); // Give time for the hub to reset.
+    }
+
     return 0;
 }
 
