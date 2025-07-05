@@ -15,8 +15,13 @@ void free_event(napi_env env, void* finalize_data, void* finalize_hint) {
 }
 napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     napi_status status;
-    napi_value obj; // JS object
-    status = napi_create_object(env, &obj);
+    napi_value ret_val;
+    status = napi_create_object(env, &ret_val);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create SensorEvent object.");
+        return NULL;
+    }
 
     uint8_t* buf = malloc(ev->len);
     if (buf == NULL) {
@@ -31,27 +36,71 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     napi_value len;          // uint8_t -> number
     napi_value reportId;     // uint8_t -> number
     napi_value report;       // uint8_t -> ArrayBuffer
-    status |= napi_create_bigint_uint64(env, ev->timestamp_uS, &timestamp_uS);
-    status |= napi_create_int64(env, ev->delay_uS, &delay_uS);
-    status |= napi_create_uint32(env, ev->len, &len);
-    status |= napi_create_uint32(env, ev->reportId, &reportId);
-    status |= napi_create_external_buffer(env, ev->len, buf, free_event, NULL,
-                                          &report);
+    status = napi_create_bigint_uint64(env, ev->timestamp_uS, &timestamp_uS);
     if (status != napi_ok) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Failed to create NAPI value");
+                         "Couldn't creating napi bigint in c_to_SensorEvent.");
+        return NULL;
+    }
+    status = napi_create_int64(env, ev->delay_uS, &delay_uS);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create napi int64 in c_to_SensorEvent.");
+        return NULL;
+    }
+    status = napi_create_uint32(env, ev->len, &len);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create napi uint32 in c_to_SensorEvent.");
+        return NULL;
+    }
+    status = napi_create_uint32(env, ev->reportId, &reportId);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create napi uint32 in c_to_SensorEvent.");
+        return NULL;
+    }
+    status = napi_create_external_buffer(env, ev->len, buf, free_event, NULL,
+                                         &report);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+            "Failed to create SensorEvent object in c_to_SensorEvent.");
         return NULL;
     }
 
-    status = napi_set_named_property(env, obj, "timestampMicroseconds",
+    status = napi_set_named_property(env, ret_val, "timestampMicroseconds",
                                      timestamp_uS);
-    status |= napi_set_named_property(env, obj, "delayMicroseconds", delay_uS);
-    status |= napi_set_named_property(env, obj, "length", len);
-    status |= napi_set_named_property(env, obj, "reportId", reportId);
-    status |= napi_set_named_property(env, obj, "report", report);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+            "Couldn't set property timestampMicroseconds for SensorEvent.");
+        return NULL;
+    }
+    status =
+        napi_set_named_property(env, ret_val, "delayMicroseconds", delay_uS);
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+            "Couldn't set property delayMicroseconds for SensorEvent.");
+        return NULL;
+    }
+    status = napi_set_named_property(env, ret_val, "length", len);
     if (status != napi_ok) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "Failed to set NAPI property");
+                         "Couldn't set property length for SensorEvent.");
+        return NULL;
+    }
+    status = napi_set_named_property(env, ret_val, "reportId", reportId);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't set property reportId for SensorEvent.");
+        return NULL;
+    }
+    status = napi_set_named_property(env, ret_val, "report", report);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't set property report for SensorEvent.");
         return NULL;
     }
 
@@ -66,21 +115,21 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
         case SH2_MAGNETIC_FIELD_CALIBRATED:
         case SH2_GYROSCOPE_UNCALIBRATED:
         case SH2_GYROSCOPE_CALIBRATED:
-            ret = add_properties_to_acceleration_report(env, obj);
+            ret = add_properties_to_acceleration_report(env, ret_val);
             if (ret != 0) {
                 // add_properties_* already throws napi error
                 return NULL;
             }
             break;
         case SH2_ROTATION_VECTOR:
-            ret = add_properties_to_rotation_vector(env, obj);
+            ret = add_properties_to_rotation_vector(env, ret_val);
             if (ret != 0) {
                 // add_properties_to_* already throws napi error
                 return NULL;
             }
     }
 
-    return obj;
+    return ret_val;
 }
 
 napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {

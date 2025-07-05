@@ -430,6 +430,7 @@ export type BNO08X = {
      * 
      * @throws `ARGUMENT_ERROR` On invalid argument.
      * @throws `ERROR_CREATING_NAPI_VALUE` On Out-Of-Memory.
+     * @throws `ERROR_TRANSLATING_STRUCT_TO_NODE` If creating a `SensorEvent` fails.
      * @throws `REF_ERROR` On being unable to create a napi reference to cb.
      * @throws `REF_ERROR` On being unable to create a napi reference to cookie.
      * @throws `ERROR_INTERACTING_WITH_DRIVER` On being unable set new cb.
