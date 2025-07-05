@@ -474,6 +474,19 @@ export type BNO08X = {
     setSensorConfig: (sensorId: SensorId, conf: SensorConfig) => void,
 
     /**
+     * @brief Get sensor configuration.
+     *
+     * @param  sensorId Which sensor to query.
+     * @param  config SensorConfig structure to store results.
+     * 
+     * @throws `ARGUMENT_ERROR` On invalid arguments.
+     * @throws `ERROR_TRANSLATING_STRUCT_TO_NODE` When unable to construct the JS object.
+     * @throws `ERROR_TRANSLATING_STRUCT_TO_NODE` When c_to_SensorConfig fails.
+     * @throws `ERROR_INTERACTING_WITH_DRIVER` On error code from driver.
+     */
+    getSensorConfig: (sensorId: SensorId) => SensorConfig,
+
+    /**
      * @brief Get an FRS record.
      * 
      * Retrieve stored setting.

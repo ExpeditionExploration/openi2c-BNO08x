@@ -487,7 +487,7 @@ napi_value cb_get_sensor_config(napi_env env, napi_callback_info info) {
     napi_status status = napi_get_value_uint32(env, argv[0], &sensor_id);
     if (status != napi_ok) {
         fprintf(stderr, "status=%d\n", status);
-        napi_throw_error(env, NULL, "Invalid SensorId");
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE, "Invalid SensorId");
     }
 
     // Get sensor config
@@ -504,7 +504,7 @@ napi_value cb_get_sensor_config(napi_env env, napi_callback_info info) {
     // Convert sensor config to napi_value
     napi_value result = c_to_SensorConfig(env, &config);
     if (result == NULL) {
-        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
                          "Failed to convert sensor config to napi_value");
         return NULL;
     }
