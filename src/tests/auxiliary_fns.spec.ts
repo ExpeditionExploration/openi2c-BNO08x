@@ -12,11 +12,11 @@ test('Converting SensorConfig from JavaScript object to C struct', () => {
     sniffEnabled: true,
     wakeupEnabled: true,
   }
-  expect(() => tests.test_from_SensorConfig_to_c(cfg)).not.toThrow();
+  expect(() => tests.test_node_to_c_SensorConfig(cfg)).not.toThrow();
 });
 
 test('Converting SensorConfig from C struct to JavaScript object', () => {
-  const testObject: SensorConfig = tests.test_c_to_SensorConfig()
+  const testObject: SensorConfig = tests.test_node_from_c_SensorConfig()
 
   expect(testObject.alwaysOnEnabled).toBe(true)
   expect(testObject.batchInterval_us).toBe(12345)
@@ -29,7 +29,7 @@ test('Converting SensorConfig from C struct to JavaScript object', () => {
 })
 
 test('Converting SensorConfigResp from C struct to JavaScript object', () => {
-  const testObject: SensorConfigResponse = tests.test_c_to_SensorConfigResp()
+  const testObject: SensorConfigResponse = tests.test_node_from_c_SensorConfigResp()
 
   expect(testObject.sensorId).toBe(SensorId.SH2_ACCELEROMETER)
   expect(testObject.sensorConfig.alwaysOnEnabled).toBe(true)

@@ -196,7 +196,7 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
     }
 
     // Translate sensor event to napi_value
-    napi_value sensor_event = c_to_SensorEvent(env, event);
+    napi_value sensor_event = node_from_c_SensorEvent(env, event);
     if (sensor_event == NULL) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
                          "Error translating SensorEvent to JS object.");
@@ -334,7 +334,8 @@ static void async_event_callback_broker(void *cookie, sh2_AsyncEvent_t *event) {
     }
 
     // Translate sensor event to napi_value
-    napi_value async_event = c_to_AsyncEvent(cookie_with_type->env, event);
+    napi_value async_event =
+        node_from_c_AsyncEvent(cookie_with_type->env, event);
     if (async_event == NULL) {
         napi_throw_error(cookie_with_type->env, ERROR_CREATING_NAPI_VALUE,
                          "Error converting sh2_AsyncEvent_t to JS object.");
@@ -487,7 +488,8 @@ napi_value cb_get_sensor_config(napi_env env, napi_callback_info info) {
     napi_status status = napi_get_value_uint32(env, argv[0], &sensor_id);
     if (status != napi_ok) {
         fprintf(stderr, "status=%d\n", status);
-        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE, "Invalid SensorId");
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Invalid SensorId");
     }
 
     // Get sensor config
@@ -502,7 +504,7 @@ napi_value cb_get_sensor_config(napi_env env, napi_callback_info info) {
     }
 
     // Convert sensor config to napi_value
-    napi_value result = c_to_SensorConfig(env, &config);
+    napi_value result = node_from_c_SensorConfig(env, &config);
     if (result == NULL) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
                          "Failed to convert sensor config to napi_value");
@@ -529,7 +531,7 @@ napi_value cb_set_sensor_config(napi_env env, napi_callback_info info) {
     // config
     static sh2_SensorConfig_t configs[SH2_MAX_SENSOR_ID + 1];
     sh2_SensorConfig_t config;
-    if (from_SensorConfig_to_c(env, argv[1], &config) != 0) {
+    if (node_to_c_SensorConfig(env, argv[1], &config) != 0) {
         napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
                          "Failed to convert sensor config from napi_value");
         return NULL;

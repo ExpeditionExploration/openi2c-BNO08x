@@ -13,7 +13,7 @@
 void free_event(napi_env env, void* finalize_data, void* finalize_hint) {
     if (finalize_data != NULL) { free(finalize_data); }
 }
-napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
+napi_value node_from_c_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     napi_status status;
     napi_value ret_val;
     status = napi_create_object(env, &ret_val);
@@ -132,7 +132,7 @@ napi_value c_to_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     return ret_val;
 }
 
-napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {
+napi_value node_from_c_SensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {
     napi_status status;
     napi_value obj;
     status = napi_create_object(env, &obj);
@@ -189,7 +189,8 @@ napi_value c_to_SensorConfig(napi_env env, sh2_SensorConfig_t* cfg) {
     return obj;
 }
 
-napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
+napi_value node_from_c_SensorConfigResp(napi_env env,
+                                        sh2_SensorConfigResp_t* cfg) {
     napi_value result;
     napi_status status;
     status = napi_create_object(env, &result);
@@ -212,7 +213,7 @@ napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
     }
 
     // Config
-    config = c_to_SensorConfig(env, &cfg->sensorConfig);
+    config = node_from_c_SensorConfig(env, &cfg->sensorConfig);
     if (config == NULL) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
                          "Couldn't create a JS Object from sh2_SensorConfig_t "
@@ -234,7 +235,7 @@ napi_value c_to_SensorConfigResp(napi_env env, sh2_SensorConfigResp_t* cfg) {
     return result;
 }
 
-napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
+napi_value node_from_c_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
@@ -247,7 +248,7 @@ napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     if (evt->eventId == SH2_GET_FEATURE_RESP) { // Populate the sensorConfigResp
         // field with the SHTP_EVENT value.
         sh2SensorConfigResp =
-            c_to_SensorConfigResp(env, &evt->sh2SensorConfigResp);
+            node_from_c_SensorConfigResp(env, &evt->sh2SensorConfigResp);
         status |= napi_get_null(env, &shtpEvent);
     } else if (evt->eventId == SH2_SHTP_EVENT) {
         status |= napi_get_null(env, &sh2SensorConfigResp);
@@ -271,7 +272,7 @@ napi_value c_to_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     return obj;
 }
 
-int8_t from_SensorConfig_to_c(napi_env env, napi_value value,
+int8_t node_to_c_SensorConfig(napi_env env, napi_value value,
                               sh2_SensorConfig_t* result) {
     napi_status status;
     napi_value changeSensitivityEnabled;

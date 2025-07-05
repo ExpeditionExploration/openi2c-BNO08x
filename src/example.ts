@@ -49,6 +49,9 @@ async function main(): Promise<void> {
         bindings.service()
     }
 
+    // As the last thing print sensorconfig.
+    console.log(`s-config: `, bindings.getSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED))
+
     bindings.close()
 }
 main().then(() => console.log("done"));

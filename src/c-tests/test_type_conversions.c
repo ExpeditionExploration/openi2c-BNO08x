@@ -6,7 +6,7 @@
 #include "error.h"
 #include "node_c_type_conversions.h"
 
-napi_value test_from_SensorConfig_to_c(napi_env env, napi_callback_info info) {
+napi_value test_node_to_c_SensorConfig(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value argv[1];
 
@@ -25,7 +25,7 @@ napi_value test_from_SensorConfig_to_c(napi_env env, napi_callback_info info) {
     napi_value js_test_cfg = argv[0];
 
     sh2_SensorConfig_t test_cfg = {0};
-    uint8_t code = from_SensorConfig_to_c(env, js_test_cfg, &test_cfg);
+    uint8_t code = node_to_c_SensorConfig(env, js_test_cfg, &test_cfg);
     if (code) {
         napi_throw_error(env, ERROR_EXECUTING_TEST,
                          "from_SensorConfig_to_c(..) returned error. Is the "
@@ -86,7 +86,8 @@ napi_value test_from_SensorConfig_to_c(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-napi_value test_c_to_SensorConfig(napi_env env, napi_callback_info info) {
+napi_value test_node_from_c_SensorConfig(napi_env env,
+                                         napi_callback_info info) {
     sh2_SensorConfig_t test_config = {
         .alwaysOnEnabled = true,
         .changeSensitivityEnabled = true,
@@ -97,24 +98,25 @@ napi_value test_c_to_SensorConfig(napi_env env, napi_callback_info info) {
         .batchInterval_us = 12345,
         .changeSensitivity = 12345,
     };
-    napi_value result = c_to_SensorConfig(env, &test_config);
+    napi_value result = node_from_c_SensorConfig(env, &test_config);
     return result; // Assert in TypeScript since it's way less wordy.
 }
 
-napi_value test_c_to_SensorConfigResp(napi_env env, napi_callback_info info) {
+napi_value test_node_from_c_SensorConfigResp(napi_env env,
+                                             napi_callback_info info) {
     sh2_SensorConfigResp_t test_cfg = {
-        .sensorConfig = {
-            .alwaysOnEnabled = true,
-            .changeSensitivityEnabled = true,
-            .changeSensitivityRelative = true,
-            .sniffEnabled = true,
-            .wakeupEnabled = true,
-            .reportInterval_us = 12345,
-            .batchInterval_us = 12345,
-            .changeSensitivity = 12345,
-        },
-        .sensorId = SH2_ACCELEROMETER
-    };
-    napi_value result = c_to_SensorConfigResp(env, &test_cfg);
+        .sensorConfig =
+            {
+                .alwaysOnEnabled = true,
+                .changeSensitivityEnabled = true,
+                .changeSensitivityRelative = true,
+                .sniffEnabled = true,
+                .wakeupEnabled = true,
+                .reportInterval_us = 12345,
+                .batchInterval_us = 12345,
+                .changeSensitivity = 12345,
+            },
+        .sensorId = SH2_ACCELEROMETER};
+    napi_value result = node_from_c_SensorConfigResp(env, &test_cfg);
     return result; // Assert in TypeScript.
 }
