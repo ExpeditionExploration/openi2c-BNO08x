@@ -478,9 +478,9 @@ export type BNO08X = {
      * @param  sensorId Which sensor to configure.
      * @param  conf `SensorConfig` object.
      * 
-     * @throws ARGUMENT_ERROR
-     * @throws ERROR_CREATING_NAPI_VALUE
-     * @throws ERROR_INTERACTING_WITH_DRIVER
+     * @throws `ARGUMENT_ERROR` On invalid arguments.
+     * @throws `ERROR_CREATING_NAPI_VALUE` On being unable to create cb fn or cookie.
+     * @throws `ERROR_INTERACTING_WITH_DRIVER` SH-2 driver returned error code.
      */
     setSensorConfig: (sensorId: SensorId, conf: SensorConfig) => void,
 
