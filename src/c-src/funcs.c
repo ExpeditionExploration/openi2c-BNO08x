@@ -250,10 +250,20 @@ static void sensor_callback(void *cookie, sh2_SensorEvent_t *event) {
 
     // Call the callback function with the sensor data
     napi_value global;
-    napi_value return_value;
     status = napi_get_global(c->env, &global);
-    status |= napi_call_function(c->env, global, fetched_js_fn, 2, argv,
-                                 &return_value);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_CREATING_NAPI_VALUE,
+                         "Couldn't get JS global object in sensor_callback");
+        return;
+    }
+    napi_value return_value;
+    status = napi_call_function(c->env, global, fetched_js_fn, 2, argv,
+                                &return_value);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_CALLING_CB,
+                         "Error calling SensorEvent callback.");
+        return;
+    }
     if (status != napi_ok) {
         napi_throw_error(
             c->env, ERROR_CREATING_NAPI_VALUE,
