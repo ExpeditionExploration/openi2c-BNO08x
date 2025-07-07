@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "c-tests/test_sensor_report_auxiliary.h"
 #include "c-tests/test_type_conversions.h"
 #include "error.h"
 
@@ -31,6 +32,8 @@ napi_value init(napi_env env, napi_value exports) {
                 test_node_from_c_SensorConfigResp, NULL);
     register_fn(env, exports, "test_node_from_c_SensorEvent",
                 test_node_from_c_SensorEvent, NULL);
+    register_fn(env, exports, "test_add_properties_to_acceleration_report",
+                test_add_properties_to_acceleration_report, NULL);
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)

@@ -1,0 +1,13 @@
+#ifndef TEST_SENSOR_REPORT_AUXILIARY_H
+#define TEST_SENSOR_REPORT_AUXILIARY_H
+
+#include "sensor_report_auxialiry_fns.h"
+
+/**
+ * Add x,y,z properties to the returned JavaScript object.
+ * Assertions are done in the Jest test file.
+ */
+napi_value test_add_properties_to_acceleration_report(napi_env env,
+                                                      napi_callback_info info);
+
+#endif

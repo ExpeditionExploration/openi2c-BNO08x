@@ -51,6 +51,7 @@
             # Test sources
             "src/c-tests/test_fn_binds.c",
             "src/c-tests/test_type_conversions.c",
+            "src/c-tests/test_sensor_report_auxiliary.c",
 
             # Binding sources
             "src/c-src/sh2_hal.c",
