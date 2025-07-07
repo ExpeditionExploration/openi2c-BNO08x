@@ -34,6 +34,8 @@ napi_value init(napi_env env, napi_value exports) {
                 test_node_from_c_SensorEvent, NULL);
     register_fn(env, exports, "test_add_properties_to_acceleration_report",
                 test_add_properties_to_acceleration_report, NULL);
+    register_fn(env, exports, "test_add_properties_to_rotation_vector",
+                test_add_properties_to_rotation_vector, NULL);
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)

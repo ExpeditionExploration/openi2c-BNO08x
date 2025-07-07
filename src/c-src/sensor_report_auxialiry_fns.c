@@ -200,7 +200,7 @@ uint8_t add_properties_to_rotation_vector(napi_env env, napi_value report) {
     }
 
     // Attach euler angle props to the report.
-    status = napi_set_named_property(env, report, "yaw", roll);
+    status = napi_set_named_property(env, report, "yaw", yaw);
     if (status != napi_ok) {
         napi_throw_error(env, SENSOR_REPORT_ERROR,
                          "Couldn't set named prop of yaw.");
