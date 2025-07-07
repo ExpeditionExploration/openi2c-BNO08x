@@ -20,12 +20,12 @@ https://www.ceva-ip.com/wp-content/uploads/SH-2-Reference-Manual.pdf
 BNO08x is a 9-axis IMU with accelerometer, magnetometer and gyroscope.
 
 This repo contains [Node.js](https://nodejs.org/en) bindings to Ceva [SH2 Sensorhub driver for MCU application](https://github.com/ceva-dsp/sh2) driver.
-This driver is Linux-specific. 
+These bindings are Linux-specific. 
 
 The bindings are written in C, and need to be compiled for them to work. There
 are no pre-compiled binaries. Installing by installing OpenI2C should get you
 going, but if you want this driver only, see *Building* for how to build the
-binary for Node.
+extension binary for Node.
 
 
 ## Prerequisites
