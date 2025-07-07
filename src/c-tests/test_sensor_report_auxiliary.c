@@ -55,8 +55,8 @@ napi_value test_add_properties_to_acceleration_report(napi_env env,
     return result;
 }
 
-napi_value test_add_properties_to_rotation_vector(napi_env env,
-                                                  napi_callback_info info) {
+napi_value test_add_pitch_yaw_roll_to_rotation_vector(napi_env env,
+                                                      napi_callback_info info) {
     napi_value buffer;
     uint8_t raw_buffer_data[14] = {
         0x05,       // Rotation vector report
@@ -95,7 +95,7 @@ napi_value test_add_properties_to_rotation_vector(napi_env env,
     }
 
     // Finally call the function to be tested
-    uint8_t code = add_properties_to_rotation_vector(env, result);
+    uint8_t code = add_pitch_yaw_roll_to_rotation_vector(env, result);
     if (code) {
         napi_throw_error(env, ERROR_EXECUTING_TEST,
                          "Tested fn returned with error.");

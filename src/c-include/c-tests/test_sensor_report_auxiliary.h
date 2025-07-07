@@ -14,8 +14,7 @@ napi_value test_add_properties_to_acceleration_report(napi_env env,
  * Add i, j, k, real and pitch, yaw, roll to the JavaScript object.
  * Assertions are done in the Jest test file.
  */
-napi_value test_add_properties_to_rotation_vector(napi_env env,
-                                              napi_callback_info info);
-
+napi_value test_add_pitch_yaw_roll_to_rotation_vector(napi_env env,
+                                                      napi_callback_info info);
 
 #endif

@@ -85,7 +85,7 @@ uint8_t add_properties_to_acceleration_report(napi_env env, napi_value report) {
     return 0; // OK
 }
 
-uint8_t add_properties_to_rotation_vector(napi_env env, napi_value report) {
+uint8_t add_pitch_yaw_roll_to_rotation_vector(napi_env env, napi_value report) {
     napi_value report_buf;
 
     // Get buffer from the report

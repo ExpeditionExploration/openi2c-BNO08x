@@ -12,7 +12,7 @@ test('Properties x,y and z get added to by the relevant helper', () => {
 
 test('Properties i,j,k,real and pitch,yaw,roll get added to by the relevant helper',
     () => {
-        const testObject = tests.test_add_properties_to_rotation_vector()
+        const testObject = tests.test_add_pitch_yaw_roll_to_rotation_vector()
 
         // Check the fixed point values are correct.
         expect(testObject.i).toBeCloseTo(0.0155639648438, 13)
