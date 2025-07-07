@@ -120,3 +120,19 @@ napi_value test_node_from_c_SensorConfigResp(napi_env env,
     napi_value result = node_from_c_SensorConfigResp(env, &test_cfg);
     return result; // Assert in TypeScript.
 }
+
+napi_value test_node_from_c_SensorEvent(napi_env env, napi_callback_info info) {
+    sh2_SensorEvent_t ev = {.delay_uS = 12345,
+                            .timestamp_uS = 12345,
+                            .len = 2,
+                            .report = {123u, 123u},
+                            .reportId = SH2_ACCELEROMETER};
+    napi_value node_ev = node_from_c_SensorEvent(env, &ev);
+    if (node_ev == NULL) {
+        napi_throw_error(
+            env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+            "node_from_c_SeonsorEvent(..) couldn't convert a sane event");
+        return NULL;
+    }
+    return node_ev;
+}

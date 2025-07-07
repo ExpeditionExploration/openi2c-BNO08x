@@ -2,7 +2,7 @@
 export type SensorEvent = {
     timestampMicroseconds: number,
     delayMicroseconds: number,
-    len: number,
+    length: number,
     reportId: number,
     report: Buffer,
     x?: number,

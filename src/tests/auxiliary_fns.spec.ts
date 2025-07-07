@@ -1,4 +1,4 @@
-import { SensorConfig, SensorConfigResponse, SensorId } from '../binding_types';
+import { SensorConfig, SensorConfigResponse, SensorEvent, SensorId } from '../binding_types';
 import { tests } from './test_loader';
 
 test('Converting SensorConfig from JavaScript object to C struct', () => {
@@ -40,4 +40,15 @@ test('Converting SensorConfigResp from C struct to JavaScript object', () => {
   expect(testObject.sensorConfig.reportInterval_us).toBe(12345)
   expect(testObject.sensorConfig.sniffEnabled).toBe(true)
   expect(testObject.sensorConfig.wakeupEnabled).toBe(true)
+})
+
+test('Converting sh2_SensorEvent_t to JavaScript object', () => {
+  const testObject: SensorEvent = tests.test_node_from_c_SensorEvent()
+
+  expect(testObject.delayMicroseconds).toBe(12345)
+  expect(testObject.length).toBe(2)
+  expect(testObject.report).toStrictEqual(Buffer.from([123, 123]))
+  expect(testObject.reportId).toBe(1)
+  const ts: BigInt = BigInt(12345)
+  expect(testObject.timestampMicroseconds).toStrictEqual(ts)
 })
