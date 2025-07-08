@@ -30,4 +30,9 @@ napi_value test_node_from_c_SensorConfigResp(napi_env env,
  */
 napi_value test_node_from_c_SensorEvent(napi_env env, napi_callback_info info);
 
+/**
+ * Build sh2_AsyncEvent_t for testing.
+ */
+napi_value test_node_from_c_AsyncEvent(napi_env env, napi_callback_info info);
+
 #endif

@@ -136,3 +136,58 @@ napi_value test_node_from_c_SensorEvent(napi_env env, napi_callback_info info) {
     }
     return node_ev;
 }
+
+napi_value test_node_from_c_AsyncEvent(napi_env env, napi_callback_info info) {
+    // AsyncEvent with SHTP event
+    sh2_AsyncEvent_t test_s_with_shtp_event = {
+        .eventId = SH2_SHTP_EVENT,
+        .shtpEvent = SH2_SHTP_INTERRUPTED_PAYLOAD,
+    };
+
+    // AsyncEvent with feature resp
+    sh2_SensorConfig_t c = {0};
+    sh2_SensorConfigResp_t r = {
+        .sensorId = SH2_ACCELEROMETER,
+        .sensorConfig = c,
+    };
+    sh2_AsyncEvent_t test_s_with_sensor_config_resp = {
+        .eventId = SH2_GET_FEATURE_RESP,
+        .sh2SensorConfigResp = r,
+    };
+
+    // Out object and the two resulting test objects inside with keys
+    // 'withShtpEv' and 'withSensorConfigResp'
+    napi_value out, with_shtp_ev, with_sensor_config_resp;
+
+    napi_status status = napi_create_object(env, &out);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_EXECUTING_TEST, "Couldn't create out obj");
+        return NULL;
+    }
+
+    with_shtp_ev = node_from_c_AsyncEvent(env, &test_s_with_shtp_event);
+    with_sensor_config_resp =
+        node_from_c_AsyncEvent(env, &test_s_with_sensor_config_resp);
+
+    if (with_shtp_ev == NULL || with_sensor_config_resp == NULL) {
+        napi_throw_error(env, ERROR_EXECUTING_TEST,
+                         "Couldn't convert value because of an error in test");
+        return NULL;
+    }
+
+    status = napi_set_named_property(env, out, "withShtpEv", with_shtp_ev);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_EXECUTING_TEST,
+                         "Couldn't set prop for out var");
+        return NULL;
+    }
+    status = napi_set_named_property(env, out, "withSensorConfigResp",
+                                     with_sensor_config_resp);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_EXECUTING_TEST,
+                         "Couldn't set prop for out var");
+        return NULL;
+    }
+
+    return out;
+}

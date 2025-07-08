@@ -1,4 +1,4 @@
-import { SensorConfig, SensorConfigResponse, SensorEvent, SensorId } from '../binding_types';
+import { AsyncEvent, AsyncEventId, SensorConfig, SensorConfigResponse, SensorEvent, SensorId, ShtpEvent } from '../binding_types';
 import { tests } from './test_loader';
 
 test('Converting SensorConfig from JavaScript object to C struct', () => {
@@ -51,4 +51,19 @@ test('Converting sh2_SensorEvent_t to JavaScript object', () => {
   expect(testObject.reportId).toBe(1)
   const ts: BigInt = BigInt(12345)
   expect(testObject.timestampMicroseconds).toStrictEqual(ts)
+})
+
+test('Converting AsyncEvent to JavaScript object', () => {
+  const testObject = tests.test_node_from_c_AsyncEvent()
+  const [withShtpEv, withSensorConfigResp]: AsyncEvent[] = [
+    testObject.withShtpEv, testObject.withSensorConfigResp]
+
+  console.log(withShtpEv)
+
+  expect(withShtpEv.eventId).toBe(AsyncEventId.SHTP_EVENT)
+  expect(withShtpEv.shtpEvent).toBe(ShtpEvent.INTERRUPTED_PAYLOAD)
+
+  expect(withSensorConfigResp.eventId).toBe(AsyncEventId.GET_FEATURE_RESP)
+  // SensorConfigResp has a test of its own. It not defined meaningfully.
+  expect(withSensorConfigResp.sensorConfigResp).toBeDefined()
 })

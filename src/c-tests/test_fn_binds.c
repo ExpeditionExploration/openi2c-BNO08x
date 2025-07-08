@@ -30,6 +30,8 @@ napi_value init(napi_env env, napi_value exports) {
                 test_node_from_c_SensorConfig, NULL);
     register_fn(env, exports, "test_node_from_c_SensorConfigResp",
                 test_node_from_c_SensorConfigResp, NULL);
+    register_fn(env, exports, "test_node_from_c_AsyncEvent",
+                test_node_from_c_AsyncEvent, NULL);
     register_fn(env, exports, "test_node_from_c_SensorEvent",
                 test_node_from_c_SensorEvent, NULL);
     register_fn(env, exports, "test_add_xyz_to_sensor_report",

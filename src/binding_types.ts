@@ -227,7 +227,7 @@ export type AsyncEvent = {
     /**
      * Either this or `.shtpEvent`
      */
-    sh2SensorConfigResp: SensorConfigResponse | undefined;
+    sensorConfigResp: SensorConfigResponse | undefined;
 }
 
 export type EventCallback = (cookie: Object, event: AsyncEvent) => void;
@@ -393,6 +393,7 @@ export type BNO08X = {
      * @throws `ARGUMENT_ERROR` on invalid arguments.
      * @throws `REF_ERROR` on invalid value to create reference from.
      * @throws `ERROR_INTERACTING_WITH_DRIVER` on failed sh2_open(..).
+     * @throws `ERROR_TRANSLATING_STRUCT_TO_NODE` from the emitted AsyncEvent
      */
     open: (callback: EventCallback, eventCookie: Object) => void,
 
@@ -418,6 +419,7 @@ export type BNO08X = {
      * object.
      * @throws `THREADING_ERROR` On a callback being invoked from a Node.js
      * thread other than the main thread.
+     * @throws `ERROR_TRANSLATING_STRUCT_TO_NODE` from emitted AsyncEvents
      */
     service: () => void,
 

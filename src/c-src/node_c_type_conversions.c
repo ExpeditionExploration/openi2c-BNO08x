@@ -239,6 +239,11 @@ napi_value node_from_c_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
     napi_value obj;
     napi_status status;
     status = napi_create_object(env, &obj);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create object for AsyncEvent");
+        return NULL;
+    }
 
     napi_value eventId;
     napi_value shtpEvent;
@@ -249,24 +254,63 @@ napi_value node_from_c_AsyncEvent(napi_env env, sh2_AsyncEvent_t* evt) {
         // field with the SHTP_EVENT value.
         sh2SensorConfigResp =
             node_from_c_SensorConfigResp(env, &evt->sh2SensorConfigResp);
-        status |= napi_get_null(env, &shtpEvent);
+        status = napi_get_null(env, &shtpEvent);
+        if (status != napi_ok) {
+            napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                             "Couldn't create null for AsyncEvent");
+            return NULL;
+        }
     } else if (evt->eventId == SH2_SHTP_EVENT) {
-        status |= napi_get_null(env, &sh2SensorConfigResp);
-        status |= napi_create_uint32(env, evt->shtpEvent, &shtpEvent);
+        status = napi_get_null(env, &sh2SensorConfigResp);
+        if (status != napi_ok) {
+            napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                             "Couldn't create null for AsyncEvent");
+            return NULL;
+        }
+
+        status = napi_create_uint32(env, evt->shtpEvent, &shtpEvent);
+        if (status != napi_ok) {
+            napi_throw_error(
+                env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                "Couldn't create a number (uint32) for AsyncEvent");
+            return NULL;
+        }
+
     } else { // It's SH2_RESET, neither of shtpEvent or sensorConfig is set
-        status |= napi_get_null(env, &shtpEvent);
+        status = napi_get_null(env, &shtpEvent);
         status |= napi_get_null(env, &sh2SensorConfigResp);
+        if (status != napi_ok) {
+            napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                             "Couldn't create null for AsyncEvent");
+            return NULL;
+        }
     }
 
-    status |= napi_create_uint32(env, evt->eventId, &eventId);
-    status |= napi_set_named_property(env, obj, "id", eventId);
-    status |= napi_set_named_property(env, obj, "shtpEvent", shtpEvent);
-    status |= napi_set_named_property(env, obj, "sh2SensorConfigResp",
-                                      sh2SensorConfigResp);
-
+    status = napi_create_uint32(env, evt->eventId, &eventId);
     if (status != napi_ok) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
-                         "couldn't construct AsyncEvent");
+                         "Couldn't create a number for AsyncEvent");
+        return NULL;
+    }
+    status = napi_set_named_property(env, obj, "eventId", eventId);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't set property X for AsyncEvent");
+        return NULL;
+    }
+    status = napi_set_named_property(env, obj, "shtpEvent", shtpEvent);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't set property X for AsyncEvent");
+        return NULL;
+    }
+    status = napi_set_named_property(env, obj, "sensorConfigResp",
+                                     sh2SensorConfigResp);
+
+    if (status != napi_ok) {
+        napi_throw_error(
+            env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+            "Couldn't set property sh2SensorConfigResp for AsyncEvent");
         return NULL;
     }
     return obj;
