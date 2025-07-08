@@ -6,8 +6,8 @@
 #include "error.h"
 #include "sensor_report_auxialiry_fns.h"
 
-napi_value test_add_properties_to_acceleration_report(napi_env env,
-                                                      napi_callback_info info) {
+napi_value test_add_xyz_to_sensor_report(napi_env env,
+                                         napi_callback_info info) {
     napi_value buffer;
     uint8_t raw_buffer_data[11] = {
         0x01,       // Accelerometer report
@@ -45,7 +45,7 @@ napi_value test_add_properties_to_acceleration_report(napi_env env,
     }
 
     // Finally call the function to be tested
-    uint8_t code = add_properties_to_acceleration_report(env, result);
+    uint8_t code = add_xyz_to_sensor_report(env, result);
     if (code) {
         napi_throw_error(env, ERROR_EXECUTING_TEST,
                          "Tested fn returned with error.");

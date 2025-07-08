@@ -7,8 +7,7 @@
  * Add x,y,z properties to the returned JavaScript object.
  * Assertions are done in the Jest test file.
  */
-napi_value test_add_properties_to_acceleration_report(napi_env env,
-                                                      napi_callback_info info);
+napi_value test_add_xyz_to_sensor_report(napi_env env, napi_callback_info info);
 
 /**
  * Add i, j, k, real and pitch, yaw, roll to the JavaScript object.

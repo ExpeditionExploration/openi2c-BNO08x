@@ -115,7 +115,7 @@ napi_value node_from_c_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
         case SH2_MAGNETIC_FIELD_CALIBRATED:
         case SH2_GYROSCOPE_UNCALIBRATED:
         case SH2_GYROSCOPE_CALIBRATED:
-            ret = add_properties_to_acceleration_report(env, ret_val);
+            ret = add_xyz_to_sensor_report(env, ret_val);
             if (ret != 0) {
                 // add_properties_* already throws napi error
                 return NULL;

@@ -5,7 +5,7 @@
 #include "error.h"
 #include "sh2/euler.h"
 
-uint8_t add_properties_to_acceleration_report(napi_env env, napi_value report) {
+uint8_t add_xyz_to_sensor_report(napi_env env, napi_value report) {
     napi_value report_buf;
 
     // Get buffer from the report

@@ -6,7 +6,7 @@
 
 /// Add .x, .y and .z properties to the report object. Non-zero
 /// return value indicates an error.
-uint8_t add_properties_to_acceleration_report(napi_env env, napi_value report);
+uint8_t add_xyz_to_sensor_report(napi_env env, napi_value report);
 
 /// Add .yaw, .pitch, .roll properties for getting euler angles. Also add
 /// .i, .j, .k, .real properties for accessing the same as quaternion.
