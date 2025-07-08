@@ -3,7 +3,7 @@ Datasheet:
 https://www.ceva-ip.com/wp-content/uploads/2019/10/BNO080_085-Datasheet.pdf
 
 
-This standalone interface provides I2C driver bindings for
+This standalone interface provides BNO08x I2C driver bindings for
 [OpenI2C](https://github.com/ExpeditionExploration/openi2c)
 
 
@@ -38,12 +38,14 @@ I2C bus needs to be enabled for your Linux. In case of Raspbian, using
 
 ## Building
 
-If, however, you want to build the bindings independently, you can
+If you want to build the bindings independently of OpenI2C, you can
 
 ```bash
 npm install
 npm run build
 ```
+
+In case you are building for for local development, the command `npm run bear-build` to generate `compile_commands.json`. This was needed to get vscode complete suggestions correctly.
 
 
 ## Usage
