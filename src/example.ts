@@ -6,43 +6,49 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function main(): Promise<void> {
     // Set bus number and device address
     bindings.setI2CConfig(1, 0x4b)
-    bindings.open((ev, cookie) => { console.log(ev) }, { foo: 'lala' })
+    bindings.open((ev, cookie) => { console.log(ev) }, { cookie: 'cookie must be an object' })
     bindings.setSensorCallback(
         (ev, cookie) => {
-            if (ev.reportId == SensorId.SH2_ACCELEROMETER) {
-                console.log(`ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
-            } else if (ev.reportId == SensorId.SH2_LINEAR_ACCELERATION) {
-                console.log(`LIN_ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
-            } else if (ev.reportId == SensorId.SH2_GRAVITY) {
-                console.log(`GRAVITY X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
-            } else if (ev.reportId == SensorId.SH2_RAW_MAGNETOMETER) {
-                console.log(`RAW MAGNETOMETER X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
-            } else if (ev.reportId == SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED) {
-                console.log(`MAGNETIC FIELD UC X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
-            } else if (ev.reportId == SensorId.SH2_ROTATION_VECTOR) {
-                console.log(`ROTATION VECTOR: pitch:${ev.pitch}, yaw:${ev.yaw}, roll:${ev.roll} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
-            } else if (ev.reportId == SensorId.SH2_GYROSCOPE_UNCALIBRATED) {
-                console.log(`GYRO uncalibrated X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
+            switch (ev.reportId) {
+                case SensorId.SH2_ACCELEROMETER:
+                    console.log(`ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_LINEAR_ACCELERATION:
+                    console.log(`LIN_ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_RAW_MAGNETOMETER:
+                    console.log(`RAW MAGNETOMETER X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED:
+                    console.log(`MAGNETIC FIELD UC X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_ROTATION_VECTOR:
+                    console.log(`ROTATION VECTOR: pitch:${ev.pitch}, yaw:${ev.yaw}, roll:${ev.roll} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_GYROSCOPE_UNCALIBRATED:
+                    console.log(`GYRO uncalibrated X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
             }
-        }, { foo: 'lala' }
+        }, { cookie: 'cookie must be an object' }
     )
 
-    const cfg_enabled: SensorConfig = {
+    const ON: SensorConfig = {
         alwaysOnEnabled: true,
-        reportInterval_us: 5000,
+        reportInterval_us: 20000,
     }
-    const cfg_disabled: SensorConfig = {
+    const OFF: SensorConfig = {
         alwaysOnEnabled: false,
         reportInterval_us: 0,
     }
-    // const sensorId = SensorId.SH2_ACCELEROMETER
-    // const sensorId = SensorId.SH2_LINEAR_ACCELERATION
-    // const sensorId = SensorId.SH2_GRAVITY
-    const sensorId = SensorId.SH2_RAW_MAGNETOMETER // NOT IMPLEMENTED?
-    // const sensorId = SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED
-    // const sensorId = SensorId.SH2_ROTATION_VECTOR
-    // const sensorId = SensorId.SH2_GYROSCOPE_UNCALIBRATED
-    bindings.setSensorConfig(sensorId, cfg_enabled)
+    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, OFF)
+    bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, OFF)
+    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
+    bindings.setSensorConfig(SensorId.SH2_GRAVITY, OFF)
+    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, OFF)
+    bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, OFF)
+    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
+    bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, OFF)
+    bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, ON)
     bindings.devOn()
 
     for (let i = 0; i < 50; i++) {
@@ -51,7 +57,7 @@ async function main(): Promise<void> {
     }
 
     // As the last thing print sensorconfig.
-    console.log(`s-config: `, bindings.getSensorConfig(sensorId))
+    //console.log(`s-config: `, bindings.getSensorConfig(sensorId))
 
     bindings.close()
 }
