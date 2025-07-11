@@ -116,6 +116,9 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
     static u_int16_t length;
     if (!is_retry) {
         const ssize_t n = read(settings->i2c_fd, pBuffer, 4); // header
+        if (pBuffer[4] == 0x16) {
+            fprintf(stderr, "Received raw magnetometer message\n");
+        }
         length = *(u_int16_t*)pBuffer;
         length &= 0x7fff;
         length = le16toh(length);

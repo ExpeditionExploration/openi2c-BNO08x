@@ -122,7 +122,7 @@ napi_value node_from_c_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
             }
             break;
         case SH2_ROTATION_VECTOR:
-            ret = add_pitch_yaw_roll_to_rotation_vector(env, ret_val);
+            ret = add_ypr_to_rotation_vector(env, ret_val);
             if (ret != 0) {
                 // add_properties_to_* already throws napi error
                 return NULL;

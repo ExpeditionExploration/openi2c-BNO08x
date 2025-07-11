@@ -10,6 +10,6 @@ uint8_t add_xyz_to_sensor_report(napi_env env, napi_value report);
 
 /// Add .yaw, .pitch, .roll properties for getting euler angles. Also add
 /// .i, .j, .k, .real properties for accessing the same as quaternion.
-uint8_t add_pitch_yaw_roll_to_rotation_vector(napi_env env, napi_value report);
+uint8_t add_ypr_to_rotation_vector(napi_env env, napi_value report);
 
 #endif
