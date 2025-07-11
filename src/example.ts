@@ -12,7 +12,7 @@ async function main(): Promise<void> {
             if (ev.reportId == SensorId.SH2_ACCELEROMETER) {
                 console.log(`ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             } else if (ev.reportId == SensorId.SH2_LINEAR_ACCELERATION) {
-                // console.log(`LIN_ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
+                console.log(`LIN_ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             } else if (ev.reportId == SensorId.SH2_GRAVITY) {
                 console.log(`GRAVITY X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Delay: ${ev.delayMicroseconds / 1000}ms`)
             } else if (ev.reportId == SensorId.SH2_RAW_MAGNETOMETER) {
@@ -27,7 +27,7 @@ async function main(): Promise<void> {
         }, { foo: 'lala' }
     )
 
-    const cfg_accel: SensorConfig = {
+    const cfg_enabled: SensorConfig = {
         alwaysOnEnabled: true,
         reportInterval_us: 5000,
     }
@@ -35,13 +35,14 @@ async function main(): Promise<void> {
         alwaysOnEnabled: false,
         reportInterval_us: 0,
     }
-    // bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, cfg_disabled)
-    // bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, cfg_disabled)
-    // bindings.setSensorConfig(SensorId.SH2_GRAVITY, cfg_disabled)
-    // bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, cfg_disabled)
-    // bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, cfg_disabled)
-    // bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, cfg_disabled)
-    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, cfg_accel)
+    // const sensorId = SensorId.SH2_ACCELEROMETER
+    // const sensorId = SensorId.SH2_LINEAR_ACCELERATION
+    // const sensorId = SensorId.SH2_GRAVITY
+    const sensorId = SensorId.SH2_RAW_MAGNETOMETER // NOT IMPLEMENTED?
+    // const sensorId = SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED
+    // const sensorId = SensorId.SH2_ROTATION_VECTOR
+    // const sensorId = SensorId.SH2_GYROSCOPE_UNCALIBRATED
+    bindings.setSensorConfig(sensorId, cfg_enabled)
     bindings.devOn()
 
     for (let i = 0; i < 50; i++) {
@@ -50,7 +51,7 @@ async function main(): Promise<void> {
     }
 
     // As the last thing print sensorconfig.
-    console.log(`s-config: `, bindings.getSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED))
+    console.log(`s-config: `, bindings.getSensorConfig(sensorId))
 
     bindings.close()
 }
