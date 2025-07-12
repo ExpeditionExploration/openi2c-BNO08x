@@ -11,22 +11,25 @@ async function main(): Promise<void> {
         (ev, cookie) => {
             switch (ev.reportId) {
                 case SensorId.SH2_ACCELEROMETER:
-                    console.log(`ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    console.log(`ACCEL, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
                     break
-                case SensorId.SH2_LINEAR_ACCELERATION:
-                    console.log(`LIN_ACCEL X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
-                    break
-                case SensorId.SH2_RAW_MAGNETOMETER:
-                    console.log(`RAW MAGNETOMETER X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
-                    break
-                case SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED:
-                    console.log(`MAGNETIC FIELD UC X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
-                    break
-                case SensorId.SH2_ROTATION_VECTOR:
-                    console.log(`ROTATION VECTOR: pitch:${ev.pitch}, yaw:${ev.yaw}, roll:${ev.roll} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                case SensorId.SH2_GRAVITY:
+                    console.log(`GRAV, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
                     break
                 case SensorId.SH2_GYROSCOPE_UNCALIBRATED:
-                    console.log(`GYRO uncalibrated X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    console.log(`GYRO UNCAL, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_LINEAR_ACCELERATION:
+                    console.log(`LIN ACCEL, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED:
+                    console.log(`MAG FIELD UNCAL, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_RAW_MAGNETOMETER:
+                    console.log(`RAW MAG, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    break
+                case SensorId.SH2_ROTATION_VECTOR:
+                    console.log(`ROT VECTOR, Yaw: ${ev.yaw}, Pitch: ${ev.pitch}, Roll: ${ev.roll} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
                     break
             }
         }, { cookie: 'cookie must be an object' }
@@ -40,18 +43,16 @@ async function main(): Promise<void> {
         alwaysOnEnabled: false,
         reportInterval_us: 0,
     }
-    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, OFF)
-    bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, OFF)
-    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
-    bindings.setSensorConfig(SensorId.SH2_GRAVITY, OFF)
-    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, OFF)
     bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, OFF)
-    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
+    bindings.setSensorConfig(SensorId.SH2_GRAVITY, OFF)
+    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, OFF)
+    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, OFF)
     bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, OFF)
+    bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
     bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, ON)
     bindings.devOn()
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 100; i++) {
         await sleep(100)
         bindings.service()
     }
