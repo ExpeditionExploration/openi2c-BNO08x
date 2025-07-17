@@ -5,7 +5,7 @@
     "main": "dist/index.js",
     "types": "dist/types.d.ts",
     "scripts": {
-	"preinstall": "git submodule update --init --recursive",
+	"preinstall": "if [ -d .git ]; then git submodule update --init --recursive; fi",
 	"install": "node-gyp rebuild && tsc",
         "test": "jest --runInBand",
         "debug-build": "node-gyp rebuild --debug && tsc",
