@@ -5,12 +5,11 @@
     "main": "dist/index.js",
     "types": "dist/types.d.ts",
     "scripts": {
-	"preinstall": "if [ -d .git ]; then git submodule update --init --recursive; fi",
-	"install": "node-gyp rebuild && tsc",
+        "prepare": "git submodule update --init --recursive && node-gyp rebuild && tsc",
         "test": "jest --runInBand",
         "debug-build": "node-gyp rebuild --debug && tsc",
         "configure": "node-gyp configure",
-        "build": "node-gyp build && tsc",
+        "build": "node-gyp rebuild && tsc",
         "bear-build": "bear -- node-gyp build && tsc",
         "rebuild": "node-gyp rebuild && tsc",
         "bear-rebuild": "bear -- node-gyp rebuild && tsc",
@@ -27,10 +26,10 @@
         "@types/jest": "^29.5.14",
         "@types/node": "^22.15.17",
         "jest": "^29.7.0",
-        "ts-jest": "^29.3.2",
-        "typescript": "^5.8.3"
+        "ts-jest": "^29.3.2"
     },
     "dependencies": {
+        "typescript": "^5.8.3",
         "bindings": "^1.5.0",
         "ts-node": "^10.9.2"
     }
