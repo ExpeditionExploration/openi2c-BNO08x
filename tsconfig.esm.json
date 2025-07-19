@@ -1,0 +1,16 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "ES2020",
+        "moduleResolution": "node",
+        "allowJs": true,
+        "baseUrl": ".",
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    },
+    // Only compile these two entry files
+    "files": [
+        "src/client.ts"
+    ]
+}

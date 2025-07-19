@@ -15,5 +15,8 @@
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true
     },
-    "exclude": ["dist/**/*"]
+    "exclude": [
+        "dist/**/*",
+        "src/client.ts"
+    ]
 }
