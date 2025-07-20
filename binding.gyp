@@ -11,7 +11,8 @@
             "src/c-src/node_c_type_conversions.c"
         ],
         "include_dirs": [
-            "src/c-include"
+            "src/c-include",
+            "<(node_root_dir)/include"
         ],
         "cflags": [
             "-Wall",    # Enable all warnings
@@ -63,6 +64,7 @@
         ],
         "include_dirs": [
             "src/c-include/",
+            "<(node_root_dir)/include"
         ],
         "cflags": [
             "-Wall",    # Enable all warnings
