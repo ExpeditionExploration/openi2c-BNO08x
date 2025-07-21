@@ -1,11 +1,12 @@
 import { bindings, SensorConfig, SensorId } from '.'
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const bus = process.env.BNO_BUS ? Number(process.env.BUS): 1
 
 
 async function main(): Promise<void> {
     // Set bus number and device address
-    bindings.setI2CConfig(1, 0x4b)
+    bindings.setI2CConfig(bus, 0x4b)
     bindings.open((ev, cookie) => { console.log(ev) }, { cookie: 'cookie must be an object' })
     bindings.setSensorCallback(
         (ev, cookie) => {

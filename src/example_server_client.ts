@@ -49,7 +49,8 @@ function callback(ev: any) {
 }
 
 export function startSensor(): void {
-    bindings.setI2CConfig(5, 0x4b);
+    const bus = process.env.BNO_BUS ? Number(process.env.BNO_BUS) : 1
+    bindings.setI2CConfig(bus, 0x4b);
     bindings.open(() => { }, { cookie: {} });
     bindings.setSensorCallback(callback, { cookie: {} });
 
