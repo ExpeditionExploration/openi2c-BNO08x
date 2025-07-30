@@ -14,6 +14,7 @@
         "rebuild": "node-gyp rebuild && tsc",
         "bear-rebuild": "bear -- node-gyp rebuild && tsc",
         "server": "node-gyp build && tsc && tsc -p tsconfig.esm.json && cp client.html dist/client.html && cp -r node_modules/three/build/*.js dist/ && node dist/server.js",
+        "visual": "node-gyp build && tsc && tsc -p tsconfig.esm.json && cp visual.html dist/visual.html && cp -r node_modules/three/build/*.js dist/ && node dist/visual.js",
         "clean": "node-gyp clean"
     },
     "keywords": [
