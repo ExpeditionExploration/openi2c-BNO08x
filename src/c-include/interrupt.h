@@ -24,4 +24,7 @@ void stop_irq_worker(void);
 // Release GPIO line/chip (call after stopping).
 void teardown_interrupts(void);
 
+// Current IRQ burst timestamp. Returns true if a burst is active.
+bool irq_current_burst(uint32_t *us_out);
+
 #endif

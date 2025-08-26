@@ -1,8 +1,11 @@
 #include "interrupt.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdio.h>
 #include <sys/eventfd.h>
+#include <time.h>
 #include <uv.h>
 
 struct openi2c_bno08x_ints_s {
@@ -19,6 +22,51 @@ static atomic_int pending = 0;
 static pthread_t irq_thread;
 static irq_main_cb_t on_main_cb = NULL;
 static void *on_main_context = NULL;
+
+// Queue of falling-edge timestamps (producer: worker, consumer: main)
+#define IRQ_TS_Q_CAP 32
+static struct {
+    uint32_t buf[IRQ_TS_Q_CAP];
+    size_t head, tail, count;
+    pthread_mutex_t mu;
+} tsq = {.head = 0, .tail = 0, .count = 0, .mu = PTHREAD_MUTEX_INITIALIZER};
+
+// Current burst timestamp (set/cleared on main thread)
+static atomic_uint_fast32_t current_burst_us = 0;
+static atomic_bool current_burst_active = false;
+
+static inline uint32_t ts_to_us32(const struct timespec *ts) {
+    uint64_t us =
+        (uint64_t)ts->tv_sec * 1000000ull + (uint64_t)ts->tv_nsec / 1000ull;
+    return (uint32_t)us; // wrap to 32-bit
+}
+
+static void tsq_push(uint32_t us) {
+    pthread_mutex_lock(&tsq.mu);
+    if (tsq.count == IRQ_TS_Q_CAP) {
+        // Drop oldest to make room
+        fprintf(stderr, "irq tsq overflow\n");
+        tsq.tail = (tsq.tail + 1) % IRQ_TS_Q_CAP;
+        tsq.count--;
+    }
+    tsq.buf[tsq.head] = us;
+    tsq.head = (tsq.head + 1) % IRQ_TS_Q_CAP;
+    tsq.count++;
+    pthread_mutex_unlock(&tsq.mu);
+}
+
+static bool tsq_pop(uint32_t *out) {
+    bool ok = false;
+    pthread_mutex_lock(&tsq.mu);
+    if (tsq.count > 0) {
+        *out = tsq.buf[tsq.tail];
+        tsq.tail = (tsq.tail + 1) % IRQ_TS_Q_CAP;
+        tsq.count--;
+        ok = true;
+    }
+    pthread_mutex_unlock(&tsq.mu);
+    return ok;
+}
 
 int setup_interrupts(const char *chipname, unsigned int line_num) {
     ints_s.chip = gpiod_chip_open_by_name(chipname);
@@ -57,10 +105,18 @@ int setup_interrupts(const char *chipname, unsigned int line_num) {
     return ints_s.fd;
 }
 
+// Consume all queued events and enqueue timestamps for falling edges.
+static struct timespec ts;
 static void drain_edge_events(void) {
     struct gpiod_line_event ev;
     while (gpiod_line_event_read(ints_s.line, &ev) == 0) {
-        // no-op; just clear the queue
+        if (ev.event_type == GPIOD_LINE_EVENT_FALLING_EDGE) {
+            clock_gettime(CLOCK_MONOTONIC, &ts);
+            // Use time created here instead of ev.ts, which is
+            // non-monotonic and subject to leap seconds.
+            tsq_push(ts_to_us32(&ts));
+        }
+        // ignore rising edges here; deassert is implied when service() drains
     }
 }
 
@@ -68,7 +124,14 @@ static void drain_edge_events(void) {
 static void irq_async_cb(uv_async_t *h) {
     (void)h;
     if (atomic_exchange(&pending, 0) == 0) return;
-    if (on_main_cb) on_main_cb(on_main_context); // call your service() here
+
+    uint32_t ts;
+    while (tsq_pop(&ts)) {
+        atomic_store(&current_burst_us, ts);
+        atomic_store(&current_burst_active, true);
+        if (on_main_cb) on_main_cb(on_main_context); // drain sh2_service()
+        atomic_store(&current_burst_active, false); // clear after burst handled
+    }
 }
 
 // Worker thread: block until GPIO edge or stop signal
@@ -148,4 +211,14 @@ void teardown_interrupts(void) {
         gpiod_chip_close(ints_s.chip);
         ints_s.chip = NULL;
     }
+}
+
+// HAL function read_from_i2c() calls this to get the current burst timestamp.
+bool irq_current_burst(uint32_t *us_out) {
+    if (!us_out) return false;
+    if (atomic_load(&current_burst_active)) {
+        *us_out = atomic_load(&current_burst_us);
+        return true;
+    }
+    return false;
 }

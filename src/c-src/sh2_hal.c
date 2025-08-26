@@ -21,6 +21,7 @@
 #include "sh2/sh2.h"
 #include "sh2/sh2_err.h"
 #include "sh2_hal_supplement.h"
+#include "interrupt.h"
 
 static i2c_settings_t CURRENT_I2C_SETTINGS;
 
@@ -145,8 +146,13 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
         return 0;
     }
     is_retry = false;
-    *t_us = self->getTimeUs(self);
-    // fprintf(stdout, "read len: %d\n", ret_val);
+    uint32_t burst_t_us;
+    bool success = irq_current_burst(&burst_t_us); // get burst timestamp
+    if (success) {
+        *t_us = burst_t_us;
+    } else {
+        *t_us = self->getTimeUs(self); // fallback to current time
+    }
     return n;
 }
 
