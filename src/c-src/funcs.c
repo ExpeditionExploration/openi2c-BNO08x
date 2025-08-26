@@ -1,4 +1,6 @@
-#include <node/node_api.h>
+
+#include "funcs.h"
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -7,11 +9,16 @@
 #include <uv.h>
 
 #include "error.h"
+#include "interrupt.h"
+#include "js_native_api.h"
+#include "js_native_api_types.h"
+#include "node_api.h"
 #include "node_c_type_conversions.h"
 #include "sh2/sh2.h"
 #include "sh2/sh2_err.h"
 #include "sh2/sh2_hal.h"
 #include "sh2_hal_supplement.h"
+#include "uv.h"
 #include "uv/unix.h"
 
 // Max arguments a function can take
@@ -700,4 +707,73 @@ napi_value cb_getFrs(napi_env env, napi_callback_info info) {
     }
 
     return buf; // No throw; OK!
+}
+
+static void call_sh2_service_from_irq(void *context) {
+    (void)context;
+    sh2_service();
+}
+napi_value cb_use_interrupts(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value argv[2];
+
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, UNKNOWN_ERROR, "Couldn't parse arguments.");
+        return NULL;
+    }
+    if (argc != 2) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Expected exactly two arguments: chipname: string,"
+                         "gpio pin: number.");
+        return NULL;
+    }
+    napi_valuetype argt;
+    napi_typeof(env, argv[0], &argt);
+    if (argt != napi_string) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "First argument must be a string (chip name).");
+        return NULL;
+    }
+    napi_typeof(env, argv[1], &argt);
+    if (argt != napi_number) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Second argument must be a number (GPIO pin).");
+        return NULL;
+    }
+
+    char chipname[50];
+    unsigned int line_no;
+    uint32_t line_no_uint32;
+    status = napi_get_value_string_utf8(env, argv[0], chipname, 50, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Couldn't parse first argument (chip name).");
+        return NULL;
+    }
+    status = napi_get_value_uint32(env, argv[1], &line_no_uint32);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Couldn't parse second argument (GPIO pin).");
+        return NULL;
+    }
+    line_no = line_no_uint32;
+
+    int stat = setup_interrupts(chipname, line_no);
+    if (stat < 0) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't setup interrupts.");
+        return NULL;
+    }
+
+    uv_loop_t *loop = NULL;
+    status = napi_get_uv_event_loop(env, &loop);
+    stat = start_irq_worker(loop, call_sh2_service_from_irq, NULL);
+    if (stat < 0) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't start IRQ worker.");
+        return NULL;
+    }
+
+    return NULL;
 }

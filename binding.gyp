@@ -8,7 +8,8 @@
             "src/c-src/funcs.c",
             "src/c-src/sensor_report_auxialiry_fns.c",
             "src/c-src/error.c",
-            "src/c-src/node_c_type_conversions.c"
+            "src/c-src/node_c_type_conversions.c",
+            "src/c-src/interrupt.c"
         ],
         "include_dirs": [
             "src/c-include",
