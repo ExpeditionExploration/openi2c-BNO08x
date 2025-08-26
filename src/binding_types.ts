@@ -3,6 +3,15 @@ export type SensorEvent = {
     timestampMicroseconds: bigint,
     delayMicroseconds: number,
     length: number,
+    /**
+     * An integer from 0 to 3, indicating the calibration status of the sensor.
+     * 
+     * - 0 - Unreliable
+     * - 1 - Low accuracy
+     * - 2 - Medium accuracy
+     * - 3 - High accuracy
+     */
+    calibrationStatus: number,
     reportId: number,
     report: Buffer,
     x?: number,

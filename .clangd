@@ -1,4 +1,4 @@
 CompileFlags:
   Add: 
-    - -I./src/ina219/src
+    - -I$HOME/.local/share/fnm/node-versions/v22.18.0/installation/include/node
     - -I./src/c-include
