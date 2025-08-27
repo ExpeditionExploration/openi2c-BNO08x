@@ -32,6 +32,8 @@ napi_value init(napi_env env, napi_value exports) {
     register_fn(env, exports, "close", cb_sh2_close, NULL);
     register_fn(env, exports, "setFrs", cb_setFrs, NULL);
     register_fn(env, exports, "getFrs", cb_getFrs, NULL);
+    // Expose interrupts setup
+    register_fn(env, exports, "useInterrupts", cb_use_interrupts, NULL);
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)

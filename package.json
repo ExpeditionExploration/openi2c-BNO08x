@@ -1,6 +1,6 @@
 {
     "name": "bno08x",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "I2C driver for BNO08x IMU.",
     "main": "dist/index.js",
     "types": "dist/types.d.ts",

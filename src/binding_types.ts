@@ -1,4 +1,3 @@
-
 export type SensorEvent = {
     timestampMicroseconds: bigint,
     delayMicroseconds: number,
@@ -383,7 +382,6 @@ export enum FrsId {
  * @brief BNO08X API
  */
 export type BNO08X = {
-
     setI2CConfig: (bus: number, addr: number) => void,
 
     /**
@@ -528,4 +526,16 @@ export type BNO08X = {
      * @throws UNKNOWN_ERROR
      */
     setFrs: (recordId: FrsId, fsrData: Buffer) => void, // THrows on error
+
+    /**
+     * Enable GPIO-based interrupts.
+     * 
+     * **NOTE:** With interrupts enabled, `service()` needn't be called. Instead
+     * worker thread watching for interrupts will push the task into task
+     * queue for you.
+     * 
+     * @param chipname e.g. "gpiochip0" or "/dev/gpiochip0"
+     * @param gpioPin line offset on the chip
+     */
+    useInterrupts: (chipname: string, gpioPin: number) => void,
 }
