@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <gpiod.h>
 #include <poll.h>
 #include <uv.h>

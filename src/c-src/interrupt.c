@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/eventfd.h>
 #include <time.h>
 #include <uv.h>
@@ -12,9 +13,16 @@ struct openi2c_bno08x_ints_s {
     int fd;
     int stop_efd; // eventfd to wake blocking poll on shutdown
     struct gpiod_chip *chip;
-    struct gpiod_line *line;
+    struct gpiod_line_request *req;
+    struct gpiod_edge_event_buffer *evbuf;
 };
-static struct openi2c_bno08x_ints_s ints_s;
+static struct openi2c_bno08x_ints_s ints_s = {
+    .fd = -1,
+    .stop_efd = -1,
+    .chip = NULL,
+    .req = NULL,
+    .evbuf = NULL,
+};
 
 // libuv dispatch to main thread
 static uv_async_t irq_async;
@@ -34,12 +42,6 @@ static struct {
 // Current burst timestamp (set/cleared on main thread)
 static atomic_uint_fast32_t current_burst_us = 0;
 static atomic_bool current_burst_active = false;
-
-static inline uint32_t ts_to_us32(const struct timespec *ts) {
-    uint64_t us =
-        (uint64_t)ts->tv_sec * 1000000ull + (uint64_t)ts->tv_nsec / 1000ull;
-    return (uint32_t)us; // wrap to 32-bit
-}
 
 static void tsq_push(uint32_t us) {
     pthread_mutex_lock(&tsq.mu);
@@ -69,35 +71,110 @@ static bool tsq_pop(uint32_t *out) {
 }
 
 int setup_interrupts(const char *chipname, unsigned int line_num) {
-    ints_s.chip = gpiod_chip_open_by_name(chipname);
+    // Open chip (v2: by path). Accept either "/dev/gpiochipN" or "gpiochipN".
+    const char *chip_path = chipname;
+    char devpath[64];
+    if (chipname && !strchr(chipname, '/')) {
+        // Treat as bare name; prepend /dev/
+        snprintf(devpath, sizeof(devpath), "/dev/%s", chipname);
+        chip_path = devpath;
+    }
+    ints_s.chip = gpiod_chip_open(chip_path);
     if (!ints_s.chip) {
-        perror("gpiod_chip_open_by_name");
+        perror("gpiod_chip_open");
         return -1;
     }
-    ints_s.line = gpiod_chip_get_line(ints_s.chip, line_num);
-    if (!ints_s.line) {
-        perror("gpiod_chip_get_line");
+
+    // Configure one input line with falling-edge events
+    struct gpiod_line_settings *settings = gpiod_line_settings_new();
+    if (!settings) {
+        fprintf(stderr, "gpiod_line_settings_new failed\n");
         gpiod_chip_close(ints_s.chip);
+        ints_s.chip = NULL;
         return -1;
     }
-    if (gpiod_line_request_falling_edge_events(ints_s.line, "openi2c-bno08x") <
+    gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_INPUT);
+    gpiod_line_settings_set_edge_detection(settings, GPIOD_LINE_EDGE_FALLING);
+    // Remove event clock selection (not available in your libgpiod v2 headers)
+
+    struct gpiod_line_config *line_cfg = gpiod_line_config_new();
+    if (!line_cfg) {
+        fprintf(stderr, "gpiod_line_config_new failed\n");
+        gpiod_line_settings_free(settings);
+        gpiod_chip_close(ints_s.chip);
+        ints_s.chip = NULL;
+        return -1;
+    }
+    unsigned int offset = line_num;
+    if (gpiod_line_config_add_line_settings(line_cfg, &offset, 1, settings) <
         0) {
-        perror("gpiod_line_request_falling_edge_events");
+        perror("gpiod_line_config_add_line_settings");
+        gpiod_line_config_free(line_cfg);
+        gpiod_line_settings_free(settings);
         gpiod_chip_close(ints_s.chip);
+        ints_s.chip = NULL;
         return -1;
     }
-    ints_s.fd = gpiod_line_event_get_fd(ints_s.line);
+
+    // Request config: consumer label (no event clock here in v2)
+    struct gpiod_request_config *req_cfg = gpiod_request_config_new();
+    if (!req_cfg) {
+        fprintf(stderr, "gpiod_request_config_new failed\n");
+        gpiod_line_config_free(line_cfg);
+        gpiod_line_settings_free(settings);
+        gpiod_chip_close(ints_s.chip);
+        ints_s.chip = NULL;
+        return -1;
+    }
+    char consumer[32];
+    snprintf(consumer, sizeof(consumer), "openi2c-bno08x:%d", getpid());
+    gpiod_request_config_set_consumer(req_cfg, consumer);
+    // gpiod_request_config_set_event_clock(...) // remove this line in v2
+
+    // Request the line(s)
+    ints_s.req = gpiod_chip_request_lines(ints_s.chip, req_cfg, line_cfg);
+    gpiod_request_config_free(req_cfg);
+    gpiod_line_config_free(line_cfg);
+    gpiod_line_settings_free(settings);
+
+    if (!ints_s.req) {
+        perror("gpiod_chip_request_lines");
+        gpiod_chip_close(ints_s.chip);
+        ints_s.chip = NULL;
+        return -1;
+    }
+
+    // Get FD for polling
+    ints_s.fd = gpiod_line_request_get_fd(ints_s.req);
     if (ints_s.fd < 0) {
-        perror("gpiod_line_event_get_fd");
+        perror("gpiod_line_request_get_fd");
+        gpiod_line_request_release(ints_s.req);
+        ints_s.req = NULL;
         gpiod_chip_close(ints_s.chip);
+        ints_s.chip = NULL;
         return -1;
     }
+
+    // Create an edge-event buffer
+    const size_t evbuf_cap = 16;
+    ints_s.evbuf = gpiod_edge_event_buffer_new(evbuf_cap);
+    if (!ints_s.evbuf) {
+        fprintf(stderr, "gpiod_edge_event_buffer_new failed\n");
+        gpiod_line_request_release(ints_s.req);
+        ints_s.req = NULL;
+        gpiod_chip_close(ints_s.chip);
+        ints_s.chip = NULL;
+        return -1;
+    }
+
     // Initialize stop eventfd once we know we have a valid GPIO FD
     ints_s.stop_efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (ints_s.stop_efd < 0) {
         perror("eventfd");
-        gpiod_line_release(ints_s.line);
-        ints_s.line = NULL;
+        gpiod_edge_event_buffer_free(ints_s.evbuf);
+        ints_s.evbuf = NULL;
+        gpiod_line_request_release(ints_s.req);
+        ints_s.req = NULL;
         gpiod_chip_close(ints_s.chip);
         ints_s.chip = NULL;
         return -1;
@@ -106,17 +183,25 @@ int setup_interrupts(const char *chipname, unsigned int line_num) {
 }
 
 // Consume all queued events and enqueue timestamps for falling edges.
-static struct timespec ts;
+static inline uint32_t monotonic_now_us32(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint32_t)((uint64_t)ts.tv_sec * 1000000ull +
+                      (uint64_t)ts.tv_nsec / 1000ull);
+}
+
 static void drain_edge_events(void) {
-    struct gpiod_line_event ev;
-    while (gpiod_line_event_read(ints_s.line, &ev) == 0) {
-        if (ev.event_type == GPIOD_LINE_EVENT_FALLING_EDGE) {
-            clock_gettime(CLOCK_MONOTONIC, &ts);
-            // Use time created here instead of ev.ts, which is
-            // non-monotonic and subject to leap seconds.
-            tsq_push(ts_to_us32(&ts));
+    for (;;) {
+        int n =
+            gpiod_line_request_read_edge_events(ints_s.req, ints_s.evbuf, 16);
+        if (n <= 0) break; // 0: none; <0: errno set
+        for (int i = 0; i < n; i++) {
+            const struct gpiod_edge_event *ev =
+                gpiod_edge_event_buffer_get_event(ints_s.evbuf, i);
+            if (!ev) continue;
+            // We requested only falling edges, so every event here is falling.
+            tsq_push(monotonic_now_us32());
         }
-        // ignore rising edges here; deassert is implied when service() drains
     }
 }
 
@@ -167,7 +252,7 @@ static void *irq_wait_thread(void *arg) {
 }
 
 int start_irq_worker(uv_loop_t *loop, irq_main_cb_t on_main, void *context) {
-    if (!ints_s.line || ints_s.fd < 0 || ints_s.stop_efd < 0 || !loop ||
+    if (!ints_s.req || ints_s.fd < 0 || ints_s.stop_efd < 0 || !loop ||
         !on_main) {
         fprintf(stderr, "start_irq_worker: invalid state/args\n");
         return -1;
@@ -203,9 +288,13 @@ void teardown_interrupts(void) {
         close(ints_s.stop_efd);
         ints_s.stop_efd = -1;
     }
-    if (ints_s.line) {
-        gpiod_line_release(ints_s.line);
-        ints_s.line = NULL;
+    if (ints_s.evbuf) {
+        gpiod_edge_event_buffer_free(ints_s.evbuf);
+        ints_s.evbuf = NULL;
+    }
+    if (ints_s.req) {
+        gpiod_line_request_release(ints_s.req);
+        ints_s.req = NULL;
     }
     if (ints_s.chip) {
         gpiod_chip_close(ints_s.chip);
