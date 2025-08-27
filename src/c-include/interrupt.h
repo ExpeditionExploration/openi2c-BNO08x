@@ -26,4 +26,7 @@ void teardown_interrupts(void);
 // Current IRQ burst timestamp. Returns true if a burst is active.
 bool irq_current_burst(uint32_t *us_out);
 
+// Read current IRQ level (active-low)
+bool irq_line_active(void);
+
 #endif

@@ -1,4 +1,8 @@
 {
+    "variables": {
+        "gpiod_cflags": "<!(pkg-config --cflags libgpiod)",
+        "gpiod_libs": "<!(pkg-config --libs libgpiod)"
+    },
     "targets": [{
         "target_name": "bno08x_native",
         "sources": [
@@ -21,7 +25,11 @@
             "-Wno-missing-braces", # Require braces
             "-Wextra",
             "-pedantic",
-            "-fPIC"     # Generate position independent code
+            "-fPIC",    # Generate position independent code
+            "<(gpiod_cflags)" # Include gpiod cflags if available
+        ],
+        "libraries": [
+            "<(gpiod_libs)" # Include gpiod libs if available
         ],
         "dependencies": [
             "sh2"

@@ -1,13 +1,24 @@
 #include "interrupt.h"
 
 #include <errno.h>
+#include <gpiod.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/eventfd.h>
 #include <time.h>
+#include <unistd.h>
 #include <uv.h>
+
+// Monotonic timestamp in microseconds (wraps at 2^32)
+static uint32_t monotonic_now_us32(void) {
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) { return 0; }
+    uint64_t us =
+        (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)ts.tv_nsec / 1000ULL;
+    return (uint32_t)us;
+}
 
 struct openi2c_bno08x_ints_s {
     int fd;
@@ -15,6 +26,7 @@ struct openi2c_bno08x_ints_s {
     struct gpiod_chip *chip;
     struct gpiod_line_request *req;
     struct gpiod_edge_event_buffer *evbuf;
+    unsigned int offset; // the GPIO line offset
 };
 static struct openi2c_bno08x_ints_s ints_s = {
     .fd = -1,
@@ -22,6 +34,7 @@ static struct openi2c_bno08x_ints_s ints_s = {
     .chip = NULL,
     .req = NULL,
     .evbuf = NULL,
+    .offset = 0,
 };
 
 // libuv dispatch to main thread
@@ -94,8 +107,9 @@ int setup_interrupts(const char *chipname, unsigned int line_num) {
         return -1;
     }
     gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_INPUT);
+    // Use BOTH during bring-up; switch back to FALLING later if you want.
     gpiod_line_settings_set_edge_detection(settings, GPIOD_LINE_EDGE_FALLING);
-    // Remove event clock selection (not available in your libgpiod v2 headers)
+    gpiod_line_settings_set_bias(settings, GPIOD_LINE_BIAS_PULL_UP);
 
     struct gpiod_line_config *line_cfg = gpiod_line_config_new();
     if (!line_cfg) {
@@ -115,6 +129,8 @@ int setup_interrupts(const char *chipname, unsigned int line_num) {
         ints_s.chip = NULL;
         return -1;
     }
+    // Remember the offset for later value reads
+    ints_s.offset = offset;
 
     // Request config: consumer label (no event clock here in v2)
     struct gpiod_request_config *req_cfg = gpiod_request_config_new();
@@ -182,40 +198,35 @@ int setup_interrupts(const char *chipname, unsigned int line_num) {
     return ints_s.fd;
 }
 
-// Consume all queued events and enqueue timestamps for falling edges.
-static inline uint32_t monotonic_now_us32(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint32_t)((uint64_t)ts.tv_sec * 1000000ull +
-                      (uint64_t)ts.tv_nsec / 1000ull);
-}
-
+// Consume queued edge events only when the kernel reports readiness.
+// Never block here; this runs from the worker thread after poll() says POLLIN.
 static void drain_edge_events(void) {
+    // Loop while there are events ready (non-blocking)
     for (;;) {
+        int ready = gpiod_line_request_wait_edge_events(ints_s.req, 0);
+        if (ready <= 0) {
+            // 0: no events ready; <0: error (errno set)
+            break;
+        }
+
         int n =
             gpiod_line_request_read_edge_events(ints_s.req, ints_s.evbuf, 16);
-        if (n <= 0) break; // 0: none; <0: errno set
+        if (n <= 0) {
+            // 0: nothing read; <0: error
+            break;
+        }
+
         for (int i = 0; i < n; i++) {
-            const struct gpiod_edge_event *ev =
+            struct gpiod_edge_event *ev =
                 gpiod_edge_event_buffer_get_event(ints_s.evbuf, i);
             if (!ev) continue;
-            // We requested only falling edges, so every event here is falling.
-            tsq_push(monotonic_now_us32());
+
+            // We requested falling edges; keep this check for safety.
+            if (gpiod_edge_event_get_event_type(ev) ==
+                GPIOD_EDGE_EVENT_FALLING_EDGE) {
+                tsq_push(monotonic_now_us32());
+            }
         }
-    }
-}
-
-// Runs on Node's main thread
-static void irq_async_cb(uv_async_t *h) {
-    (void)h;
-    if (atomic_exchange(&pending, 0) == 0) return;
-
-    uint32_t ts;
-    while (tsq_pop(&ts)) {
-        atomic_store(&current_burst_us, ts);
-        atomic_store(&current_burst_active, true);
-        if (on_main_cb) on_main_cb(on_main_context); // drain sh2_service()
-        atomic_store(&current_burst_active, false); // clear after burst handled
     }
 }
 
@@ -227,21 +238,35 @@ static void *irq_wait_thread(void *arg) {
         {.fd = ints_s.stop_efd, .events = POLLIN},
     };
 
+    // If the line is already asserted (active-low), schedule an immediate
+    // drain.
+    if (irq_line_active()) {
+        tsq_push(monotonic_now_us32());
+        if (atomic_exchange(&pending, 1) == 0) { uv_async_send(&irq_async); }
+    }
+
     for (;;) {
-        int rc = poll(pfds, 2, -1); // fully blocking
+        int rc = poll(pfds, 2, -1);
         if (rc < 0) {
             if (errno == EINTR) continue;
             perror("poll");
             break;
         }
+
         if (pfds[1].revents & POLLIN) {
-            // Drain stop event and exit
             uint64_t v;
             (void)read(ints_s.stop_efd, &v, sizeof(v));
             break;
         }
+
+        if (pfds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            fprintf(stderr, "irq: gpio fd error/hup (revents=0x%x)\n",
+                    pfds[0].revents);
+            break;
+        }
+
         if (pfds[0].revents & POLLIN) {
-            // Drain GPIO events and coalesce into one main-thread wake
+            // Now safe to read — FD is readable.
             drain_edge_events();
             if (atomic_exchange(&pending, 1) == 0) {
                 uv_async_send(&irq_async);
@@ -249,6 +274,26 @@ static void *irq_wait_thread(void *arg) {
         }
     }
     return NULL;
+}
+
+// Runs on Node's main thread
+static void irq_async_cb(uv_async_t *h) {
+    (void)h;
+    if (atomic_exchange(&pending, 0) == 0) return;
+
+    uint32_t ts;
+    while (tsq_pop(&ts)) {
+        atomic_store(&current_burst_us, ts);
+        atomic_store(&current_burst_active, true);
+        if (on_main_cb) {
+            // Drain BNO08x until INT deasserts (active-low)
+            int cap = 20000; // safety cap to avoid starvation if stuck-low
+            do {
+                on_main_cb(on_main_context);
+            } while (--cap > 0 && irq_line_active());
+        }
+        atomic_store(&current_burst_active, false);
+    }
 }
 
 int start_irq_worker(uv_loop_t *loop, irq_main_cb_t on_main, void *context) {
@@ -310,4 +355,15 @@ bool irq_current_burst(uint32_t *us_out) {
         return true;
     }
     return false;
+}
+
+// Read current IRQ level (active-low)
+bool irq_line_active(void) {
+    if (!ints_s.req) return false;
+    int v = gpiod_line_request_get_value(ints_s.req, ints_s.offset);
+    if (v < 0) {
+        perror("gpiod_line_request_get_value");
+        return false;
+    }
+    return v == 0;
 }

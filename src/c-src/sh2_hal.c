@@ -149,7 +149,7 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
     uint32_t burst_t_us;
     bool success = irq_current_burst(&burst_t_us); // get burst timestamp
     if (success) {
-        *t_us = burst_t_us;
+        *t_us = burst_t_us; // Use the the time interrupt was detected
     } else {
         *t_us = self->getTimeUs(self); // fallback to current time
     }

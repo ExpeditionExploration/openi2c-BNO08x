@@ -1,4 +1,3 @@
-
 #include "funcs.h"
 
 #include <stddef.h>
@@ -709,9 +708,21 @@ napi_value cb_getFrs(napi_env env, napi_callback_info info) {
     return buf; // No throw; OK!
 }
 
-static void call_sh2_service_from_irq(void *context) {
-    (void)context;
-    sh2_service();
+static void call_sh2_service_on_irq(void *context) {
+    napi_handle_scope scope;
+    napi_status status = napi_open_handle_scope(context, &scope);
+    if (status != napi_ok) {
+        napi_throw_error(context, ERROR_OPENING_SCOPE,
+                         "Couldn't open napi scope.");
+        return;
+    }
+    sh2_service(); // one service per interrupt
+    status = napi_close_handle_scope(context, scope);
+    if (status != napi_ok) {
+        napi_throw_error(context, ERROR_CLOSING_SCOPE,
+                         "Couldn't close napi scope.");
+        return;
+    }
 }
 napi_value cb_use_interrupts(napi_env env, napi_callback_info info) {
     size_t argc = 2;
@@ -767,8 +778,14 @@ napi_value cb_use_interrupts(napi_env env, napi_callback_info info) {
     }
 
     uv_loop_t *loop = NULL;
-    status = napi_get_uv_event_loop(env, &loop);
-    stat = start_irq_worker(loop, call_sh2_service_from_irq, NULL);
+    napi_status s = napi_get_uv_event_loop(env, &loop);
+    if (s != napi_ok || !loop) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't start IRQ worker.");
+        return NULL;
+    }
+
+    stat = start_irq_worker(loop, call_sh2_service_on_irq, env);
     if (stat < 0) {
         napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
                          "Couldn't start IRQ worker.");
