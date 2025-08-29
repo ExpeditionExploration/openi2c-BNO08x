@@ -7,12 +7,15 @@ const bus = process.env.BNO_BUS ? Number(process.env.BNO_BUS) : 1
 async function main(): Promise<void> {
     // Set bus number and device address
     bindings.setI2CConfig(bus, 0x4b)
-    bindings.open((ev, cookie) => { console.log(ev) }, { cookie: 'cookie must be an object' })
+    bindings.open((ev, cookie) => { return }, { cookie: 'cookie must be an object' })
     bindings.setSensorCallback(
         (ev, cookie) => {
             switch (ev.reportId) {
                 case SensorId.SH2_LINEAR_ACCELERATION:
-                    console.log(`ACCEL, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                    const x = ev.x?.toFixed(4).toString().padStart(7)
+                    const y = ev.y?.toFixed(4).toString().padStart(7)
+                    const z = ev.z?.toFixed(4).toString().padStart(7)
+                    console.log(`LIN ACCEL, X: ${x}, Y: ${y}, Z: ${z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
                     break
                 case SensorId.SH2_GRAVITY:
                     console.log(`GRAV, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
@@ -38,7 +41,7 @@ async function main(): Promise<void> {
 
     const ON: SensorConfig = {
         alwaysOnEnabled: true,
-        reportInterval_us: 50000,
+        reportInterval_us: 10000,
     }
     const OFF: SensorConfig = {
         alwaysOnEnabled: false,

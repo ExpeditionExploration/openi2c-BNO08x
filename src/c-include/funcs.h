@@ -18,5 +18,7 @@ napi_value cb_devSleep(napi_env env, napi_callback_info info);
 napi_value cb_setFrs(napi_env env, napi_callback_info info);
 napi_value cb_getFrs(napi_env env, napi_callback_info info);
 napi_value cb_use_interrupts(napi_env env, napi_callback_info info);
+napi_value cb_store_current_dynamic_calibration(napi_env env,
+                                                napi_callback_info info);
 
 #endif

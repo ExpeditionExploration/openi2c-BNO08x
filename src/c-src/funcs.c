@@ -1,5 +1,6 @@
 #include "funcs.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -605,59 +606,66 @@ napi_value cb_devSleep(napi_env env, napi_callback_info info) {
 }
 
 napi_value cb_setFrs(napi_env env, napi_callback_info info) {
-    uint16_t recordId; // Which record to set.
-    uint16_t words;    // Number of 32-bit words to write or 0 to delete record.
-    void *data;        // Pointer to the buffer to write.
-    size_t data_len;
-
-    // Get arguments
-    size_t argc = 2; // Record ID to write and the buffer for it.
-    napi_value argv[2];
+    size_t argc = 2;
+    napi_value argv[2]; // [0] recordId, [1] Buffer
 
     napi_status status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     if (status != napi_ok) {
-        napi_throw_error(env, ARGUMENT_ERROR, "Error setting frs");
+        napi_throw_error(env, ARGUMENT_ERROR, "Couldn't parse arguments.");
         return NULL;
     }
     if (argc != 2) {
-        napi_throw_error(env, ARGUMENT_ERROR, "Exactly 2 arguments expected.");
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Expected exactly two arguments: recordId: number, "
+                         "Buffer with data.");
+        return NULL;
+    }
+    napi_valuetype argt;
+    napi_typeof(env, argv[0], &argt);
+    if (argt != napi_number) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "First argument must be a number (recordId).");
+        return NULL;
+    }
+    napi_typeof(env, argv[1], &argt);
+    if (argt != napi_object) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Second argument must be a Buffer (object).");
+        return NULL;
+    }
+    bool argt_is_buffer;
+    napi_is_buffer(env, argv[1], &argt_is_buffer);
+    if (!argt_is_buffer) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Second argument must be a Buffer.");
         return NULL;
     }
 
-    // Read the buffer to be passed for sh2_setFrs(..)
-    status = napi_get_buffer_info(env, argv[1], &data, &data_len);
+    // Get the recordId arg
+    uint32_t recordId;
+    status = napi_get_value_uint32(env, argv[0], &recordId);
     if (status != napi_ok) {
         napi_throw_error(env, ARGUMENT_ERROR,
-                         "Second argument must be a buffer.");
+                         "Couldn't parse first argument (recordId).");
         return NULL;
     }
-    if (data_len % 4) {
-        napi_throw_error(env, ARGUMENT_ERROR,
-                         "Invalid buffer. Is it from getFrs()?");
-        return NULL;
-    }
-    words = data_len / 4;
 
-    // Get the record id to write
-    uint32_t tmp;
-    status = napi_get_value_uint32(env, argv[0], &tmp);
+    // Get the buffer arg
+    size_t buffer_len = 0;
+    void *data;
+    status = napi_get_buffer_info(env, argv[1], &data, &buffer_len);
     if (status != napi_ok) {
         napi_throw_error(env, ARGUMENT_ERROR,
-                         "First argument must be number representing the FRS "
-                         "record to be written.");
+                         "Couldn't parse second argument (Buffer with data).");
         return NULL;
     }
-    recordId = tmp;
-
-    // Write the record
-    int code = sh2_setFrs(recordId, data, words);
-    if (code != SH2_OK) {
-        napi_throw_error(
-            env, UNKNOWN_ERROR,
-            "Unknown error. Do the designated record and the buffer match?");
+    uint16_t words = buffer_len / 2;
+    int sh2_status = sh2_setFrs(recordId, data, words);
+    if (sh2_status != SH2_OK) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't set FRS data.");
         return NULL;
     }
-
     return NULL; // No throw; OK.
 }
 
@@ -706,6 +714,36 @@ napi_value cb_getFrs(napi_env env, napi_callback_info info) {
     }
 
     return buf; // No throw; OK!
+}
+
+napi_value cb_store_current_dynamic_calibration(napi_env env,
+                                                napi_callback_info info) {
+    size_t argc = 0;
+    napi_status status = napi_get_cb_info(env, info, &argc, NULL, NULL, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Couldn't parse arguments.");
+        return NULL;
+    }
+    if (argc != 0) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Expected no arguments.");
+        return NULL;
+    }
+
+    uint32_t data[300];
+    uint16_t words = 150; // word in this ctx is 2 bytes.
+    int code = sh2_getFrs(DYNAMIC_CALIBRATION, data, &words);
+    if (code != SH2_OK) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't get current dynamic calibration.");
+        return NULL;
+    }
+    code = sh2_setFrs(DYNAMIC_CALIBRATION, data, words);
+    if (code != SH2_OK) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't store current dynamic calibration.");
+        return NULL;
+    }
+    return NULL; // No throw; OK!
 }
 
 static void call_sh2_service_on_irq(void *context) {

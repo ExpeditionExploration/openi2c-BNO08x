@@ -34,6 +34,9 @@ napi_value init(napi_env env, napi_value exports) {
     register_fn(env, exports, "getFrs", cb_getFrs, NULL);
     // Expose interrupts setup
     register_fn(env, exports, "useInterrupts", cb_use_interrupts, NULL);
+    register_fn(env, exports, "storeCurrentDynamicCalibration",
+                cb_store_current_dynamic_calibration, NULL);
+    
     return exports;
 }
 NAPI_MODULE(bno08x_native, init)

@@ -525,7 +525,19 @@ export type BNO08X = {
      * @throws ARGUMENT_ERROR
      * @throws UNKNOWN_ERROR
      */
-    setFrs: (recordId: FrsId, fsrData: Buffer) => void, // THrows on error
+    setFrs: (recordId: FrsId, fsrData: Buffer) => void, // Throws on error
+
+    /**
+     * Store current dynamic calibration to the Dynamic Calibration FRS.
+     *
+     * This is a convenience function that fetches the current dynamic
+     * calibration from the sensor hub and stores it to the Dynamic Calibration
+     * FRS record.
+     * 
+     * @throws `ARGUMENT_ERROR`
+     * @throws `ERROR_INTERACTING_WITH_DRIVER`
+     */
+    storeCurrentDynamicCalibration: () => void,
 
     /**
      * Enable GPIO-based interrupts.
