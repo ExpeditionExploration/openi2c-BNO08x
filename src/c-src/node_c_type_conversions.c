@@ -13,6 +13,7 @@
 #include "sh2/sh2_SensorValue.h"
 
 void free_event(napi_env env, void* finalize_data, void* finalize_hint) {
+    (void)finalize_hint; // unused
     if (finalize_data != NULL) { free(finalize_data); }
 }
 napi_value node_from_c_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
@@ -24,7 +25,6 @@ napi_value node_from_c_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
                          "Couldn't create SensorEvent object.");
         return NULL;
     }
-    
     sh2_SensorValue_t sv;
     sh2_decodeSensorEvent(&sv, ev);
     uint32_t calibration_status = sv.status & 0x03;

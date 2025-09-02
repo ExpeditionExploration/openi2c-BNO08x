@@ -1,7 +1,7 @@
 import { bindings, SensorConfig, SensorId } from '.'
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-const bus = process.env.BNO_BUS ? Number(process.env.BUS): 1
+const bus = process.env.BNO_BUS ? Number(process.env.BNO_BUS) : 1
 
 
 async function main(): Promise<void> {
@@ -38,7 +38,7 @@ async function main(): Promise<void> {
 
     const ON: SensorConfig = {
         alwaysOnEnabled: true,
-        reportInterval_us: 20000,
+        reportInterval_us: 2000,
     }
     const OFF: SensorConfig = {
         alwaysOnEnabled: false,
@@ -46,17 +46,15 @@ async function main(): Promise<void> {
     }
     bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, OFF)
     bindings.setSensorConfig(SensorId.SH2_GRAVITY, OFF)
-    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, OFF)
-    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, OFF)
+    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, ON)
+    bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, ON)
     bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, OFF)
     bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
     bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, ON)
+    bindings.useInterrupts("gpiochip0", 23) // Use GPIO23 for interrupts
     bindings.devOn()
 
-    for (let i = 0; i < 100; i++) {
-        await sleep(100)
-        bindings.service()
-    }
+    await sleep(10_000)
 
     // As the last thing print sensorconfig.
     //console.log(`s-config: `, bindings.getSensorConfig(sensorId))

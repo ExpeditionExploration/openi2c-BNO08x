@@ -1,16 +1,21 @@
+#define _GNU_SOURCE
 #include "interrupt.h"
 
 #include <errno.h>
 #include <gpiod.h>
 #include <pthread.h>
+#include <sched.h> // CPU_* macros, sched_*
 #include <stdatomic.h>
+#include <stdbool.h> // add
+#include <stddef.h>  // add (size_t)
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/eventfd.h>
 #include <time.h>
 #include <unistd.h>
 #include <uv.h>
-
+#include <sched.h>   // CPU_* macros, sched_*
 // Monotonic timestamp in microseconds (wraps at 2^32)
 static uint32_t monotonic_now_us32(void) {
     struct timespec ts;
@@ -43,9 +48,11 @@ static atomic_int pending = 0;
 static pthread_t irq_thread;
 static irq_main_cb_t on_main_cb = NULL;
 static void *on_main_context = NULL;
+// Configure worker thread scheduling only once
+static atomic_bool worker_sched_configured = false;
 
 // Queue of falling-edge timestamps (producer: worker, consumer: main)
-#define IRQ_TS_Q_CAP 32
+#define IRQ_TS_Q_CAP 600
 static struct {
     uint32_t buf[IRQ_TS_Q_CAP];
     size_t head, tail, count;
@@ -224,7 +231,7 @@ static void drain_edge_events(void) {
             // We requested falling edges; keep this check for safety.
             if (gpiod_edge_event_get_event_type(ev) ==
                 GPIOD_EDGE_EVENT_FALLING_EDGE) {
-                tsq_push(monotonic_now_us32());
+                tsq_push(gpiod_edge_event_get_timestamp_ns(ev) / 1000);
             }
         }
     }
@@ -314,6 +321,89 @@ int start_irq_worker(uv_loop_t *loop, irq_main_cb_t on_main, void *context) {
         fprintf(stderr, "pthread_create failed\n");
         uv_close((uv_handle_t *)&irq_async, NULL);
         return -1;
+    }
+
+    // Configure affinity/priority once per process
+    if (!atomic_exchange(&worker_sched_configured, true)) {
+        // ---- Affinity: pick a CPU different from current, within allowed mask
+        // ----
+        long n_onln = sysconf(_SC_NPROCESSORS_ONLN);
+        if (n_onln <= 1) {
+            fprintf(stderr,
+                    "[irq] affinity: %ld core online; leaving default\n",
+                    n_onln);
+        } else {
+            cpu_set_t allowed;
+            CPU_ZERO(&allowed);
+
+            // Try thread mask; fallback to process mask
+            if (pthread_getaffinity_np(irq_thread, sizeof(allowed), &allowed) !=
+                0) {
+                if (sched_getaffinity(0, sizeof(allowed), &allowed) != 0) {
+                    perror("[irq] affinity: sched_getaffinity");
+                    CPU_ZERO(&allowed);
+                }
+            }
+
+            int cur_cpu = sched_getcpu(); // CPU of this (calling) thread
+            if (cur_cpu < 0) cur_cpu = -1;
+
+            int target_cpu = -1;
+            for (int i = 0; i < CPU_SETSIZE; i++) {
+                if (!CPU_ISSET(i, &allowed)) continue;
+                if (i == cur_cpu && n_onln > 1) continue;
+                target_cpu = i;
+                break;
+            }
+            if (target_cpu < 0) {
+                for (int i = 0; i < CPU_SETSIZE; i++) {
+                    if (CPU_ISSET(i, &allowed)) {
+                        target_cpu = i;
+                        break;
+                    }
+                }
+            }
+
+            if (target_cpu >= 0) {
+                cpu_set_t set;
+                CPU_ZERO(&set);
+                CPU_SET(target_cpu, &set);
+                if (pthread_setaffinity_np(irq_thread, sizeof(set), &set) !=
+                    0) {
+                    perror("[irq] affinity: pthread_setaffinity_np");
+                } else {
+                    fprintf(stderr, "[irq] affinity: pinned worker to CPU %d\n",
+                            target_cpu);
+                }
+            } else {
+                fprintf(
+                    stderr,
+                    "[irq] affinity: no allowed CPU found; leaving default\n");
+            }
+        }
+
+        // ---- Priority: attempt RT at max, warn if insufficient privileges
+        // ----
+        int maxp = sched_get_priority_max(SCHED_FIFO);
+        if (maxp < 1) {
+            fprintf(stderr,
+                    "[irq] prio: SCHED_FIFO unsupported; leaving default\n");
+        } else {
+            struct sched_param sp = {.sched_priority = maxp};
+            if (pthread_setschedparam(irq_thread, SCHED_FIFO, &sp) != 0) {
+                if (errno == EPERM) {
+                    fprintf(stderr,
+                            "[irq] prio: insufficient privileges "
+                            "(CAP_SYS_NICE) to set RT; "
+                            "run as root or grant cap_sys_nice\n");
+                } else {
+                    perror("[irq] prio: pthread_setschedparam");
+                }
+            } else {
+                fprintf(stderr, "[irq] prio: set SCHED_FIFO priority=%d\n",
+                        maxp);
+            }
+        }
     }
     return 0;
 }
