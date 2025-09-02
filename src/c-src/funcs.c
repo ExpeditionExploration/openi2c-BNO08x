@@ -485,6 +485,7 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
 
 napi_value cb_sh2_close(napi_env env, napi_callback_info _) {
     sh2_close();
+    stop_irq_worker();
     return NULL;
 }
 

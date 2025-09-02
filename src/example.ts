@@ -54,7 +54,7 @@ async function main(): Promise<void> {
     bindings.useInterrupts("gpiochip0", 23) // Use GPIO23 for interrupts
     bindings.devOn()
 
-    await sleep(10_000)
+    await sleep(5000)
 
     // As the last thing print sensorconfig.
     //console.log(`s-config: `, bindings.getSensorConfig(sensorId))

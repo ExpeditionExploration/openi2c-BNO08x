@@ -409,6 +409,7 @@ int start_irq_worker(uv_loop_t *loop, irq_main_cb_t on_main, void *context) {
 }
 
 void stop_irq_worker(void) {
+    if (irq_thread == 0) return;
     // Wake the blocking poll by writing to eventfd
     if (ints_s.stop_efd >= 0) {
         uint64_t one = 1;
