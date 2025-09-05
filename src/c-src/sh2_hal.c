@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <time.h>
@@ -18,6 +20,7 @@
 
 #include "error.h"
 #include "funcs.h"
+#include "interrupt.h"
 #include "sh2/sh2.h"
 #include "sh2/sh2_err.h"
 #include "sh2_hal_supplement.h"
@@ -28,6 +31,7 @@ static i2c_settings_t CURRENT_I2C_SETTINGS;
 // It should put the device in reset then de-initialize any
 // peripherals or hardware resources that were used.
 void close_i2c(sh2_Hal_t* self) {
+    (void)self;
     if (sh2_devReset() < 0) {
         fprintf(stderr, "Sensor hub couldn't be reset on close\n");
     }
@@ -48,6 +52,7 @@ void close_i2c(sh2_Hal_t* self) {
 // It should also perform a reset cycle on the sensor hub to
 // ensure communications start from a known state.
 int open_i2c(sh2_Hal_t* self) {
+    (void)self;
     if (CURRENT_I2C_SETTINGS.i2c_fd > 0) {
         // An i2c device is already open.
         fprintf(stderr, "I2C device is already open.\n");
@@ -111,20 +116,26 @@ int open_i2c(sh2_Hal_t* self) {
 
 int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
                   uint32_t* t_us) {
+    (void)len;
     i2c_settings_t* settings = &CURRENT_I2C_SETTINGS;
     static bool is_retry;
     static u_int16_t length;
+    uint8_t seq;
+    const char* debug = getenv("OPENI2C_DEBUG");
+
     if (!is_retry) {
         const ssize_t n = read(settings->i2c_fd, pBuffer, 4); // header
-        if (pBuffer[4] == 0x16) {
-            fprintf(stderr, "Received raw magnetometer message\n");
-        }
+        seq = pBuffer[3]; // Sequence number
         length = *(u_int16_t*)pBuffer;
         length &= 0x7fff;
         length = le16toh(length);
         if (n < 0 && errno == EIO) {
+            if (debug && strcmp(debug, "true") == 0) {
+                fprintf(stderr,
+                        "\x1b[31mSeq: %hhd, dropped due to error\x1b[0m\n",
+                        seq);
+            }
             perror("read_from_i2c(..)");
-            // Fetch napi_env for the main thread.
             napi_throw_error(
                 _global_env_dont_touch, I2C_ERROR,
                 "Are you perhaps on Raspberry Pi 4B or older and are using "
@@ -132,11 +143,30 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
                 "about clock stretching on this platform.");
             return 0;
         } else if (n < 0) {
+            if (debug && strcmp(debug, "true") == 0) {
+                fprintf(stderr,
+                        "\x1b[31mSeq: %hhd, dropped due to error\x1b[0m\n",
+                        seq);
+            }
             perror("read_from_i2c(..)");
             return 0;
         }
-        if (length == 0) { return 0; }
+        if (length == 0) {
+            if (debug && strcmp(debug, "true") == 0) {
+                fprintf(
+                    stderr,
+                    "\x1b[31mSeq: %hhd, dropped due to no data ready\x1b[0m\n",
+                    seq);
+            }
+            return 0;
+        }
         is_retry = true;
+        if (debug && strcmp(debug, "true") == 0) {
+            fprintf(stderr,
+                    "\x1b[33mSeq: %hhd, Read payload length; retrying with "
+                    "full length\x1b[0m\n",
+                    seq);
+        }
         return 0;
     }
     const ssize_t n = read(settings->i2c_fd, pBuffer, length + 4);
@@ -144,9 +174,23 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
         perror("read_from_i2c");
         return 0;
     }
+    seq = pBuffer[3]; // Sequence number
     is_retry = false;
-    *t_us = self->getTimeUs(self);
-    // fprintf(stdout, "read len: %d\n", ret_val);
+    uint32_t burst_t_us;
+    bool success = irq_current_burst(&burst_t_us); // get burst timestamp
+    if (success) {
+        *t_us = burst_t_us; // Use the time interrupt was detected
+    } else {
+        if (debug && strcmp(debug, "true") == 0) {
+            fprintf(stderr,
+                    "\x1b[31mWarning: irq_current_burst() failed; using current time "
+                    "instead\x1b[0m\n");
+        }
+        *t_us = self->getTimeUs(self); // fallback to current time
+    }
+    if (debug && strcmp(debug, "true") == 0) {
+        fprintf(stderr, "\x1b[32mSeq: %hhd, Read %ld bytes\x1b[0m\n", seq, n);
+    }
     return n;
 }
 
@@ -162,6 +206,7 @@ int read_from_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len,
 // accepted.  It need not block.  The actual transmission of
 // the data can continue after this function returns.
 int write_to_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned int len) {
+    (void)self;
     // fprintf(stderr, "write_to_i2c, len=%d\n", len);
     i2c_settings_t* settings = &CURRENT_I2C_SETTINGS;
     ssize_t n = write(settings->i2c_fd, pBuffer, len);
@@ -176,6 +221,7 @@ int write_to_i2c(sh2_Hal_t* self, uint8_t* pBuffer, unsigned int len) {
  * value starts from 0 again in case it would exceed the 32-bit range.
  */
 uint32_t get_time_us(sh2_Hal_t* self) {
+    (void)self;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     uint64_t t = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;

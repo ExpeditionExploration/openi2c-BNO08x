@@ -1,4 +1,4 @@
-import * as THREE from './three.module.js';
+import * as THREE from 'three';
 
 // Helper functions
 function createTextSprite(text: string, width = 64, height = 32): THREE.Sprite {

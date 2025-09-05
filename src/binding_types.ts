@@ -1,8 +1,16 @@
-
 export type SensorEvent = {
     timestampMicroseconds: bigint,
     delayMicroseconds: number,
     length: number,
+    /**
+     * An integer from 0 to 3, indicating the calibration status of the sensor.
+     * 
+     * - 0 - Unreliable
+     * - 1 - Low accuracy
+     * - 2 - Medium accuracy
+     * - 3 - High accuracy
+     */
+    calibrationStatus: number,
     reportId: number,
     report: Buffer,
     x?: number,
@@ -374,7 +382,6 @@ export enum FrsId {
  * @brief BNO08X API
  */
 export type BNO08X = {
-
     setI2CConfig: (bus: number, addr: number) => void,
 
     /**
@@ -518,5 +525,29 @@ export type BNO08X = {
      * @throws ARGUMENT_ERROR
      * @throws UNKNOWN_ERROR
      */
-    setFrs: (recordId: FrsId, fsrData: Buffer) => void, // THrows on error
+    setFrs: (recordId: FrsId, fsrData: Buffer) => void, // Throws on error
+
+    /**
+     * Store current dynamic calibration to the Dynamic Calibration FRS.
+     *
+     * This is a convenience function that fetches the current dynamic
+     * calibration from the sensor hub and stores it to the Dynamic Calibration
+     * FRS record.
+     * 
+     * @throws `ARGUMENT_ERROR`
+     * @throws `ERROR_INTERACTING_WITH_DRIVER`
+     */
+    storeCurrentDynamicCalibration: () => void,
+
+    /**
+     * Enable GPIO-based interrupts.
+     * 
+     * **NOTE:** With interrupts enabled, `service()` needn't be called. Instead
+     * worker thread watching for interrupts will push the task into task
+     * queue for you.
+     * 
+     * @param chipname e.g. "gpiochip0" or "/dev/gpiochip0"
+     * @param gpioPin line offset on the chip
+     */
+    useInterrupts: (chipname: string, gpioPin: number) => void,
 }

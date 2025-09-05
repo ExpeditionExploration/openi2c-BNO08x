@@ -1,3 +1,0 @@
-[submodule "src/c-src/sh2"]
-	path = src/c-src/sh2
-	url = https://github.com/ceva-dsp/sh2.git

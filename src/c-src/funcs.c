@@ -1,4 +1,6 @@
-#include <node/node_api.h>
+#include "funcs.h"
+
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -7,11 +9,16 @@
 #include <uv.h>
 
 #include "error.h"
+#include "interrupt.h"
+#include "js_native_api.h"
+#include "js_native_api_types.h"
+#include "node_api.h"
 #include "node_c_type_conversions.h"
 #include "sh2/sh2.h"
 #include "sh2/sh2_err.h"
 #include "sh2/sh2_hal.h"
 #include "sh2_hal_supplement.h"
+#include "uv.h"
 #include "uv/unix.h"
 
 // Max arguments a function can take
@@ -478,6 +485,7 @@ napi_value cb_sh2_open(napi_env env, napi_callback_info info) {
 
 napi_value cb_sh2_close(napi_env env, napi_callback_info _) {
     sh2_close();
+    stop_irq_worker();
     return NULL;
 }
 
@@ -599,59 +607,66 @@ napi_value cb_devSleep(napi_env env, napi_callback_info info) {
 }
 
 napi_value cb_setFrs(napi_env env, napi_callback_info info) {
-    uint16_t recordId; // Which record to set.
-    uint16_t words;    // Number of 32-bit words to write or 0 to delete record.
-    void *data;        // Pointer to the buffer to write.
-    size_t data_len;
-
-    // Get arguments
-    size_t argc = 2; // Record ID to write and the buffer for it.
-    napi_value argv[2];
+    size_t argc = 2;
+    napi_value argv[2]; // [0] recordId, [1] Buffer
 
     napi_status status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     if (status != napi_ok) {
-        napi_throw_error(env, ARGUMENT_ERROR, "Error setting frs");
+        napi_throw_error(env, ARGUMENT_ERROR, "Couldn't parse arguments.");
         return NULL;
     }
     if (argc != 2) {
-        napi_throw_error(env, ARGUMENT_ERROR, "Exactly 2 arguments expected.");
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Expected exactly two arguments: recordId: number, "
+                         "Buffer with data.");
+        return NULL;
+    }
+    napi_valuetype argt;
+    napi_typeof(env, argv[0], &argt);
+    if (argt != napi_number) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "First argument must be a number (recordId).");
+        return NULL;
+    }
+    napi_typeof(env, argv[1], &argt);
+    if (argt != napi_object) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Second argument must be a Buffer (object).");
+        return NULL;
+    }
+    bool argt_is_buffer;
+    napi_is_buffer(env, argv[1], &argt_is_buffer);
+    if (!argt_is_buffer) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Second argument must be a Buffer.");
         return NULL;
     }
 
-    // Read the buffer to be passed for sh2_setFrs(..)
-    status = napi_get_buffer_info(env, argv[1], &data, &data_len);
+    // Get the recordId arg
+    uint32_t recordId;
+    status = napi_get_value_uint32(env, argv[0], &recordId);
     if (status != napi_ok) {
         napi_throw_error(env, ARGUMENT_ERROR,
-                         "Second argument must be a buffer.");
+                         "Couldn't parse first argument (recordId).");
         return NULL;
     }
-    if (data_len % 4) {
-        napi_throw_error(env, ARGUMENT_ERROR,
-                         "Invalid buffer. Is it from getFrs()?");
-        return NULL;
-    }
-    words = data_len / 4;
 
-    // Get the record id to write
-    uint32_t tmp;
-    status = napi_get_value_uint32(env, argv[0], &tmp);
+    // Get the buffer arg
+    size_t buffer_len = 0;
+    void *data;
+    status = napi_get_buffer_info(env, argv[1], &data, &buffer_len);
     if (status != napi_ok) {
         napi_throw_error(env, ARGUMENT_ERROR,
-                         "First argument must be number representing the FRS "
-                         "record to be written.");
+                         "Couldn't parse second argument (Buffer with data).");
         return NULL;
     }
-    recordId = tmp;
-
-    // Write the record
-    int code = sh2_setFrs(recordId, data, words);
-    if (code != SH2_OK) {
-        napi_throw_error(
-            env, UNKNOWN_ERROR,
-            "Unknown error. Do the designated record and the buffer match?");
+    uint16_t words = buffer_len / 2;
+    int sh2_status = sh2_setFrs(recordId, data, words);
+    if (sh2_status != SH2_OK) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't set FRS data.");
         return NULL;
     }
-
     return NULL; // No throw; OK.
 }
 
@@ -680,8 +695,8 @@ napi_value cb_getFrs(napi_env env, napi_callback_info info) {
     }
     recordId = _recordId;
 
-    uint32_t data[300];
-    uint16_t words = 75; // 75 * 4 = 300
+    uint32_t data[72]; // MAX_FRS_WORDS=72
+    uint16_t words = 72;
     int code = sh2_getFrs(recordId, data, &words);
     if (code != SH2_OK) {
         napi_throw_error(env, UNKNOWN_ERROR,
@@ -700,4 +715,113 @@ napi_value cb_getFrs(napi_env env, napi_callback_info info) {
     }
 
     return buf; // No throw; OK!
+}
+
+napi_value cb_store_current_dynamic_calibration(napi_env env,
+                                                napi_callback_info info) {
+    size_t argc = 0;
+    napi_status status = napi_get_cb_info(env, info, &argc, NULL, NULL, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Couldn't parse arguments.");
+        return NULL;
+    }
+    if (argc != 0) {
+        napi_throw_error(env, ARGUMENT_ERROR, "Expected no arguments.");
+        return NULL;
+    }
+
+    int code = sh2_saveDcdNow();
+    if (code != SH2_OK) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't store current dynamic calibration.");
+        return NULL;
+    }
+    return NULL; // No throw; OK!
+}
+
+static void call_sh2_service_on_irq(void *context) {
+    napi_handle_scope scope;
+    napi_status status = napi_open_handle_scope(context, &scope);
+    if (status != napi_ok) {
+        napi_throw_error(context, ERROR_OPENING_SCOPE,
+                         "Couldn't open napi scope.");
+        return;
+    }
+    sh2_service(); // one service per interrupt
+    status = napi_close_handle_scope(context, scope);
+    if (status != napi_ok) {
+        napi_throw_error(context, ERROR_CLOSING_SCOPE,
+                         "Couldn't close napi scope.");
+        return;
+    }
+}
+napi_value cb_use_interrupts(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value argv[2];
+
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, UNKNOWN_ERROR, "Couldn't parse arguments.");
+        return NULL;
+    }
+    if (argc != 2) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Expected exactly two arguments: chipname: string,"
+                         "gpio pin: number.");
+        return NULL;
+    }
+    napi_valuetype argt;
+    napi_typeof(env, argv[0], &argt);
+    if (argt != napi_string) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "First argument must be a string (chip name).");
+        return NULL;
+    }
+    napi_typeof(env, argv[1], &argt);
+    if (argt != napi_number) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Second argument must be a number (GPIO pin).");
+        return NULL;
+    }
+
+    char chipname[50];
+    unsigned int line_no;
+    uint32_t line_no_uint32;
+    status = napi_get_value_string_utf8(env, argv[0], chipname, 50, NULL);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Couldn't parse first argument (chip name).");
+        return NULL;
+    }
+    status = napi_get_value_uint32(env, argv[1], &line_no_uint32);
+    if (status != napi_ok) {
+        napi_throw_error(env, ARGUMENT_ERROR,
+                         "Couldn't parse second argument (GPIO pin).");
+        return NULL;
+    }
+    line_no = line_no_uint32;
+
+    int stat = setup_interrupts(chipname, line_no);
+    if (stat < 0) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't setup interrupts.");
+        return NULL;
+    }
+
+    uv_loop_t *loop = NULL;
+    napi_status s = napi_get_uv_event_loop(env, &loop);
+    if (s != napi_ok || !loop) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't start IRQ worker.");
+        return NULL;
+    }
+
+    stat = start_irq_worker(loop, call_sh2_service_on_irq, env);
+    if (stat < 0) {
+        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
+                         "Couldn't start IRQ worker.");
+        return NULL;
+    }
+
+    return NULL;
 }

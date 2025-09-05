@@ -5,12 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <endian.h>
 
 #include "error.h"
 #include "sensor_report_auxialiry_fns.h"
 #include "sh2/sh2.h"
+#include "sh2/sh2_SensorValue.h"
 
 void free_event(napi_env env, void* finalize_data, void* finalize_hint) {
+    (void)finalize_hint; // unused
     if (finalize_data != NULL) { free(finalize_data); }
 }
 napi_value node_from_c_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
@@ -20,6 +23,23 @@ napi_value node_from_c_SensorEvent(napi_env env, sh2_SensorEvent_t* ev) {
     if (status != napi_ok) {
         napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
                          "Couldn't create SensorEvent object.");
+        return NULL;
+    }
+    sh2_SensorValue_t sv;
+    sh2_decodeSensorEvent(&sv, ev);
+    uint32_t calibration_status = sv.status & 0x03;
+    napi_value calibrationStatus;
+    status = napi_create_uint32(env, calibration_status, &calibrationStatus);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't create calibrationStatus in c_to_SensorEvent.");
+        return NULL;
+    }
+    status = napi_set_named_property(env, ret_val, "calibrationStatus",
+                                     calibrationStatus);
+    if (status != napi_ok) {
+        napi_throw_error(env, ERROR_TRANSLATING_STRUCT_TO_NODE,
+                         "Couldn't set property calibrationStatus for SensorEvent.");
         return NULL;
     }
 

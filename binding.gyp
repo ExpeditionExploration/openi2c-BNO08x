@@ -1,4 +1,8 @@
 {
+    "variables": {
+        "gpiod_cflags": "<!(pkg-config --cflags libgpiod)",
+        "gpiod_libs": "<!(pkg-config --libs libgpiod)"
+    },
     "targets": [{
         "target_name": "bno08x_native",
         "sources": [
@@ -8,7 +12,8 @@
             "src/c-src/funcs.c",
             "src/c-src/sensor_report_auxialiry_fns.c",
             "src/c-src/error.c",
-            "src/c-src/node_c_type_conversions.c"
+            "src/c-src/node_c_type_conversions.c",
+            "src/c-src/interrupt.c"
         ],
         "include_dirs": [
             "src/c-include",
@@ -20,7 +25,11 @@
             "-Wno-missing-braces", # Require braces
             "-Wextra",
             "-pedantic",
-            "-fPIC"     # Generate position independent code
+            "-fPIC",    # Generate position independent code
+            "<(gpiod_cflags)" # Include gpiod cflags if available
+        ],
+        "libraries": [
+            "<(gpiod_libs)" # Include gpiod libs if available
         ],
         "dependencies": [
             "sh2"

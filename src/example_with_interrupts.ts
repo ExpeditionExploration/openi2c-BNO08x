@@ -7,12 +7,15 @@ const bus = process.env.BNO_BUS ? Number(process.env.BNO_BUS) : 1
 async function main(): Promise<void> {
     // Set bus number and device address
     bindings.setI2CConfig(bus, 0x4b)
-    bindings.open((ev, cookie) => { console.log(ev) }, { cookie: 'cookie must be an object' })
+    bindings.open((ev, cookie) => { return }, { cookie: 'cookie must be an object' })
     bindings.setSensorCallback(
         (ev, cookie) => {
             switch (ev.reportId) {
-                case SensorId.SH2_ACCELEROMETER:
-                    console.log(`ACCEL, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
+                case SensorId.SH2_LINEAR_ACCELERATION:
+                    const x = ev.x?.toFixed(4).toString().padStart(7)
+                    const y = ev.y?.toFixed(4).toString().padStart(7)
+                    const z = ev.z?.toFixed(4).toString().padStart(7)
+                    console.log(`LIN ACCEL, X: ${x}, Y: ${y}, Z: ${z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
                     break
                 case SensorId.SH2_GRAVITY:
                     console.log(`GRAV, X: ${ev.x}, Y: ${ev.y}, Z: ${ev.z} -- Time: ${ev.timestampMicroseconds / 1000n}ms, Delay: ${ev.delayMicroseconds / 1000}ms`)
@@ -38,7 +41,7 @@ async function main(): Promise<void> {
 
     const ON: SensorConfig = {
         alwaysOnEnabled: true,
-        reportInterval_us: 2000,
+        reportInterval_us: 10000,
     }
     const OFF: SensorConfig = {
         alwaysOnEnabled: false,
@@ -46,16 +49,17 @@ async function main(): Promise<void> {
     }
     bindings.setSensorConfig(SensorId.SH2_ACCELEROMETER, OFF)
     bindings.setSensorConfig(SensorId.SH2_GRAVITY, OFF)
-    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, ON)
+    bindings.setSensorConfig(SensorId.SH2_GYROSCOPE_UNCALIBRATED, OFF)
     bindings.setSensorConfig(SensorId.SH2_LINEAR_ACCELERATION, ON)
     bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, OFF)
     bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
-    bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, ON)
+    bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, OFF)
+    bindings.useInterrupts("gpiochip0", 23) // Use GPIO23 for interrupts
     bindings.devOn()
 
-    for (let i = 0; i < 20; i++) {
-        await sleep(100)
-        bindings.service()
+    for (let i = 0; i < 100; i++) {
+        await sleep(1000)
+        // bindings.service() // No need to call service when using interrupts
     }
 
     // As the last thing print sensorconfig.
