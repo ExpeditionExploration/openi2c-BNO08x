@@ -15,7 +15,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <uv.h>
-#include <sched.h>   // CPU_* macros, sched_*
 // Monotonic timestamp in microseconds (wraps at 2^32)
 static uint32_t monotonic_now_us32(void) {
     struct timespec ts;
@@ -48,23 +47,27 @@ static atomic_int pending = 0;
 static pthread_t irq_thread;
 static irq_main_cb_t on_main_cb = NULL;
 static void *on_main_context = NULL;
-// Configure worker thread scheduling only once
-static atomic_bool worker_sched_configured = false;
 
 // Queue of falling-edge timestamps (producer: worker, consumer: main)
 #define IRQ_TS_Q_CAP 600
 static struct {
     uint32_t buf[IRQ_TS_Q_CAP];
     size_t head, tail, count;
-    pthread_mutex_t mu;
-} tsq = {.head = 0, .tail = 0, .count = 0, .mu = PTHREAD_MUTEX_INITIALIZER};
+    pthread_mutex_t mutex;
+} tsq = {.head = 0, .tail = 0, .count = 0, .mutex = PTHREAD_MUTEX_INITIALIZER};
 
 // Current burst timestamp (set/cleared on main thread)
 static atomic_uint_fast32_t current_burst_us = 0;
 static atomic_bool current_burst_active = false;
 
 static void tsq_push(uint32_t us) {
-    pthread_mutex_lock(&tsq.mu);
+    int code = pthread_mutex_lock(&tsq.mutex);
+    if (code) {
+        fprintf(stderr, "tsq_push: pthread_mutex_lock failed: %s\n",
+                strerror(code));
+        return;
+    }
+
     if (tsq.count == IRQ_TS_Q_CAP) {
         // Drop oldest to make room
         fprintf(stderr, "irq tsq overflow\n");
@@ -74,19 +77,35 @@ static void tsq_push(uint32_t us) {
     tsq.buf[tsq.head] = us;
     tsq.head = (tsq.head + 1) % IRQ_TS_Q_CAP;
     tsq.count++;
-    pthread_mutex_unlock(&tsq.mu);
+    code = pthread_mutex_unlock(&tsq.mutex);
+    if (code) {
+        fprintf(stderr, "tsq_push: pthread_mutex_unlock failed: %s\n",
+                strerror(code));
+        return;
+    }
 }
 
 static bool tsq_pop(uint32_t *out) {
     bool ok = false;
-    pthread_mutex_lock(&tsq.mu);
+
+    int code = pthread_mutex_lock(&tsq.mutex);
+    if (code) {
+        fprintf(stderr, "irq tsq_pop: pthread_mutex_lock failed: %s\n",
+                strerror(code));
+        return 0;
+    }
+
     if (tsq.count > 0) {
         *out = tsq.buf[tsq.tail];
         tsq.tail = (tsq.tail + 1) % IRQ_TS_Q_CAP;
         tsq.count--;
         ok = true;
     }
-    pthread_mutex_unlock(&tsq.mu);
+    code = pthread_mutex_unlock(&tsq.mutex);
+    if (code) {
+        fprintf(stderr, "irq tsq_pop: pthread_mutes_unlockx failed: %s\n",
+                strerror(code));
+    }
     return ok;
 }
 
@@ -113,6 +132,8 @@ int setup_interrupts(const char *chipname, unsigned int line_num) {
         ints_s.chip = NULL;
         return -1;
     }
+
+    // TODO: Check return codes.
     gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_INPUT);
     // Use BOTH during bring-up; switch back to FALLING later if you want.
     gpiod_line_settings_set_edge_detection(settings, GPIOD_LINE_EDGE_FALLING);
@@ -323,88 +344,6 @@ int start_irq_worker(uv_loop_t *loop, irq_main_cb_t on_main, void *context) {
         return -1;
     }
 
-    // Configure affinity/priority once per process
-    if (!atomic_exchange(&worker_sched_configured, true)) {
-        // ---- Affinity: pick a CPU different from current, within allowed mask
-        // ----
-        long n_onln = sysconf(_SC_NPROCESSORS_ONLN);
-        if (n_onln <= 1) {
-            fprintf(stderr,
-                    "[irq] affinity: %ld core online; leaving default\n",
-                    n_onln);
-        } else {
-            cpu_set_t allowed;
-            CPU_ZERO(&allowed);
-
-            // Try thread mask; fallback to process mask
-            if (pthread_getaffinity_np(irq_thread, sizeof(allowed), &allowed) !=
-                0) {
-                if (sched_getaffinity(0, sizeof(allowed), &allowed) != 0) {
-                    perror("[irq] affinity: sched_getaffinity");
-                    CPU_ZERO(&allowed);
-                }
-            }
-
-            int cur_cpu = sched_getcpu(); // CPU of this (calling) thread
-            if (cur_cpu < 0) cur_cpu = -1;
-
-            int target_cpu = -1;
-            for (int i = 0; i < CPU_SETSIZE; i++) {
-                if (!CPU_ISSET(i, &allowed)) continue;
-                if (i == cur_cpu && n_onln > 1) continue;
-                target_cpu = i;
-                break;
-            }
-            if (target_cpu < 0) {
-                for (int i = 0; i < CPU_SETSIZE; i++) {
-                    if (CPU_ISSET(i, &allowed)) {
-                        target_cpu = i;
-                        break;
-                    }
-                }
-            }
-
-            if (target_cpu >= 0) {
-                cpu_set_t set;
-                CPU_ZERO(&set);
-                CPU_SET(target_cpu, &set);
-                if (pthread_setaffinity_np(irq_thread, sizeof(set), &set) !=
-                    0) {
-                    perror("[irq] affinity: pthread_setaffinity_np");
-                } else {
-                    fprintf(stderr, "[irq] affinity: pinned worker to CPU %d\n",
-                            target_cpu);
-                }
-            } else {
-                fprintf(
-                    stderr,
-                    "[irq] affinity: no allowed CPU found; leaving default\n");
-            }
-        }
-
-        // ---- Priority: attempt RT at max, warn if insufficient privileges
-        // ----
-        int maxp = sched_get_priority_max(SCHED_FIFO);
-        if (maxp < 1) {
-            fprintf(stderr,
-                    "[irq] prio: SCHED_FIFO unsupported; leaving default\n");
-        } else {
-            struct sched_param sp = {.sched_priority = maxp};
-            if (pthread_setschedparam(irq_thread, SCHED_FIFO, &sp) != 0) {
-                if (errno == EPERM) {
-                    fprintf(stderr,
-                            "[irq] prio: insufficient privileges "
-                            "(CAP_SYS_NICE) to set RT; "
-                            "run as root or grant cap_sys_nice\n");
-                } else {
-                    perror("[irq] prio: pthread_setschedparam");
-                }
-            } else {
-                fprintf(stderr, "[irq] prio: set SCHED_FIFO priority=%d\n",
-                        maxp);
-            }
-        }
-    }
     return 0;
 }
 
@@ -415,7 +354,11 @@ void stop_irq_worker(void) {
         uint64_t one = 1;
         (void)write(ints_s.stop_efd, &one, sizeof(one));
     }
-    pthread_join(irq_thread, NULL);
+    int code = pthread_join(irq_thread, NULL);
+    if (code) {
+        fprintf(stderr, "stop_irq_worker: pthread_join failed: %s\n",
+                strerror(code));
+    }
     uv_close((uv_handle_t *)&irq_async, NULL);
 }
 

@@ -695,8 +695,8 @@ napi_value cb_getFrs(napi_env env, napi_callback_info info) {
     }
     recordId = _recordId;
 
-    uint32_t data[300];
-    uint16_t words = 75; // 75 * 4 = 300
+    uint32_t data[72]; // MAX_FRS_WORDS=72
+    uint16_t words = 72;
     int code = sh2_getFrs(recordId, data, &words);
     if (code != SH2_OK) {
         napi_throw_error(env, UNKNOWN_ERROR,
@@ -730,15 +730,7 @@ napi_value cb_store_current_dynamic_calibration(napi_env env,
         return NULL;
     }
 
-    uint32_t data[300];
-    uint16_t words = 150; // word in this ctx is 2 bytes.
-    int code = sh2_getFrs(DYNAMIC_CALIBRATION, data, &words);
-    if (code != SH2_OK) {
-        napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
-                         "Couldn't get current dynamic calibration.");
-        return NULL;
-    }
-    code = sh2_setFrs(DYNAMIC_CALIBRATION, data, words);
+    int code = sh2_saveDcdNow();
     if (code != SH2_OK) {
         napi_throw_error(env, ERROR_INTERACTING_WITH_DRIVER,
                          "Couldn't store current dynamic calibration.");

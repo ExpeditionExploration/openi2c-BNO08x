@@ -51,10 +51,12 @@ async function main(): Promise<void> {
     bindings.setSensorConfig(SensorId.SH2_MAGNETIC_FIELD_UNCALIBRATED, OFF)
     bindings.setSensorConfig(SensorId.SH2_RAW_MAGNETOMETER, OFF)
     bindings.setSensorConfig(SensorId.SH2_ROTATION_VECTOR, ON)
-    bindings.useInterrupts("gpiochip0", 23) // Use GPIO23 for interrupts
     bindings.devOn()
 
-    await sleep(5000)
+    for (let i = 0; i < 20; i++) {
+        await sleep(100)
+        bindings.service()
+    }
 
     // As the last thing print sensorconfig.
     //console.log(`s-config: `, bindings.getSensorConfig(sensorId))
