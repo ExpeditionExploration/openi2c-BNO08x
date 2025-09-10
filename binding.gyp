@@ -17,6 +17,9 @@
         ],
         "include_dirs": [
             "src/c-include",
+            # Below is because c-src has subdir sh2 which contains ceva
+            # sensorhub2 driver, and it has both src and includes in same dir
+            "src/c-src",
             "<(node_root_dir)/include"
         ],
         "cflags": [
@@ -73,6 +76,7 @@
         ],
         "include_dirs": [
             "src/c-include/",
+            "src/c-src",
             "<(node_root_dir)/include"
         ],
         "cflags": [
