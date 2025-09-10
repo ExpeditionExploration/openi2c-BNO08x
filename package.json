@@ -9,6 +9,7 @@
         "debug-build": "node-gyp rebuild --debug && tsc",
         "configure": "node-gyp configure",
         "build": "node-gyp rebuild && tsc",
+        "install": "node-gyp rebuild && tsc",
         "bear-build": "bear -- node-gyp build && tsc",
         "rebuild": "node-gyp rebuild && tsc",
         "bear-rebuild": "bear -- node-gyp rebuild && tsc",
