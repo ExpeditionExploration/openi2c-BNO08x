@@ -68,11 +68,17 @@ static void tsq_push(uint32_t us) {
         return;
     }
 
+    static bool overflow_warned = false;
     if (tsq.count == IRQ_TS_Q_CAP) {
         // Drop oldest to make room
-        fprintf(stderr, "irq tsq overflow\n");
+        if (!overflow_warned) {
+            fprintf(stderr, "BNO08x: interrupt request's timestamp queue overflows\n");
+            overflow_warned = true;
+        }
         tsq.tail = (tsq.tail + 1) % IRQ_TS_Q_CAP;
         tsq.count--;
+    } else {
+        overflow_warned = false;
     }
     tsq.buf[tsq.head] = us;
     tsq.head = (tsq.head + 1) % IRQ_TS_Q_CAP;
